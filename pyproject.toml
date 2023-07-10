@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "parallel-build"
+version = "0.1.0"
+description = ""
+authors = ["Matteo Silvestro <matteosilvestro@live.it>"]
+readme = "README.md"
+packages = [{include = "parallel_build"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
