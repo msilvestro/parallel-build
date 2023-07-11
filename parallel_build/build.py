@@ -55,16 +55,3 @@ class WebGLBuilder:
     @property
     def return_value(self):
         return self.build_process.wait()
-
-
-if __name__ == "__main__":
-    builder = WebGLBuilder(project_path=sys.argv[1])
-    for percentage, line in builder.output_lines:
-        print(f"{percentage:0.2f}% | {line}")
-    print()
-    return_value = builder.return_value
-    if return_value == 0:
-        print(f"Success!")
-    else:
-        print(f"Error ({return_value})")
-        print(builder.error_message)
