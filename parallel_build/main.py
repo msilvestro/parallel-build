@@ -1,22 +1,59 @@
 import sys
-from parallel_build.build import WebGLBuilder
+from parallel_build.build import Builder
+from parallel_build.source import LocalSource, Source
 from parallel_build.temp import temporary_project
 import chime
+import yaml
+import platformdirs
 
-chime.theme("pokemon")
+
+def load_config():
+    with open(
+        platformdirs.user_config_path() / "ParallelBuild" / "config.yaml",
+        encoding="utf-8",
+    ) as f:
+        config = yaml.safe_load(f.read())
+    return config
+
+
+def get_project(config, project_name):
+    for project in config["projects"]:
+        if project["name"] == project_name:
+            return project
+
+
+def play_notification(config: dict, return_value: int):
+    if not config["notification"]["enabled"]:
+        return
+    if return_value == 0:
+        chime.success()
+    else:
+        chime.error()
 
 
 if __name__ == "__main__":
-    with temporary_project(project_path=sys.argv[1]) as temp_project_path:
-        builder = WebGLBuilder(project_path=temp_project_path)
+    config = load_config()
+    chime.theme(config["notification"]["theme"])
+    project_name = sys.argv[1]
+    project = get_project(config, project_name)
+    if project is None:
+        raise Exception(f"Project '{project_name}' not found")
+    source = Source(project["source"]["type"], project["source"]["value"])
+    with source.temporary_project() as temp_project_path:
+        builder = Builder(
+            project_path=temp_project_path,
+            build_path=project["build"].get("path", "Build/WebGL"),
+            build_method=project["build"].get(
+                "method", "ParallelBuild.WebGLBuilder.Build"
+            ),
+        )
         for percentage, line in builder.output_lines:
             print(f"{percentage:0.2f}% | {line}")
         print()
         return_value = builder.return_value
         if return_value == 0:
             print(f"Success!")
-            chime.success()
         else:
             print(f"Error ({return_value})")
             print(builder.error_message)
-            chime.error()
+        play_notification(config, return_value)

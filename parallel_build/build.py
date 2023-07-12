@@ -1,17 +1,17 @@
 import io
 from pathlib import Path
-import sys
 import yaml
 import subprocess
 
 MAX_LINES = 3108
 
 
-class WebGLBuilder:
-    def __init__(self, project_path, build_path=None):
+class Builder:
+    def __init__(self, project_path, build_path, build_method):
         project_path = Path(project_path)
-        if not build_path:
-            build_path = project_path / "Build" / "WebGL"
+        build_path = Path(build_path)
+        if not build_path.is_absolute:
+            build_path = project_path / build_path
 
         with open(
             project_path / "ProjectSettings" / "ProjectVersion.txt", encoding="utf-8"
@@ -26,7 +26,7 @@ class WebGLBuilder:
                 "-batchmode",
                 f'-projectpath "{project_path}"',
                 "-logFile -",
-                "-executeMethod ParallelBuild.WebGLBuilder.Build",
+                f"-executeMethod {build_method}",
                 f'-buildpath "{build_path}"',
             ]
         )
