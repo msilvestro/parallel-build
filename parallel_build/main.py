@@ -29,7 +29,7 @@ if __name__ == "__main__":
     project = get_project(config, project_name)
     if project is None:
         raise Exception(f"Project '{project_name}' not found")
-    with Source(project.source.type, project.source.value) as source:
+    with Source(project.name, project.source.type, project.source.value) as source:
         with source.temporary_project() as temp_project_path:
             builder = Builder(
                 project_path=temp_project_path,
