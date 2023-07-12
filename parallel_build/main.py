@@ -29,22 +29,21 @@ if __name__ == "__main__":
     project = get_project(config, project_name)
     if project is None:
         raise Exception(f"Project '{project_name}' not found")
-    source = Source(project.source.type, project.source.value)
-    with source.temporary_project() as temp_project_path:
-        builder = Builder(
-            project_path=temp_project_path,
-            build_path=project.build.path,
-            build_method=project.build.method,
-        )
-        play_notification(config, 0)
-        # builder.start()
-        # for percentage, line in builder.output_lines:
-        #     print(f"{percentage:0.2f}% | {line}")
-        # print()
-        # return_value = builder.return_value
-        # if return_value == 0:
-        #     print(f"Success!")
-        # else:
-        #     print(f"Error ({return_value})")
-        #     print(builder.error_message)
-        # play_notification(config, return_value)
+    with Source(project.source.type, project.source.value) as source:
+        with source.temporary_project() as temp_project_path:
+            builder = Builder(
+                project_path=temp_project_path,
+                build_path=project.build.path,
+                build_method=project.build.method,
+            )
+            builder.start()
+            for percentage, line in builder.output_lines:
+                print(f"{percentage:0.2f}% | {line}")
+            print()
+            return_value = builder.return_value
+            if return_value == 0:
+                print("Success!")
+            else:
+                print(f"Error ({return_value})")
+                print(builder.error_message)
+            play_notification(config, return_value)
