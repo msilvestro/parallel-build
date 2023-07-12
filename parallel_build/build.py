@@ -10,7 +10,7 @@ class Builder:
     def __init__(self, project_path, build_path, build_method):
         project_path = Path(project_path)
         build_path = Path(build_path)
-        if not build_path.is_absolute:
+        if not build_path.is_absolute():
             build_path = project_path / build_path
 
         with open(
@@ -19,7 +19,7 @@ class Builder:
             project_version_yaml = yaml.safe_load(f.read())
         editor_version = project_version_yaml["m_EditorVersion"]
 
-        command = " ".join(
+        self.command = " ".join(
             [
                 f'"C:\\Program Files\\Unity\\Hub\\Editor\\{editor_version}\\Editor\\Unity.exe"',
                 "-quit",
@@ -30,13 +30,19 @@ class Builder:
                 f'-buildpath "{build_path}"',
             ]
         )
+        self.build_process = None
+        self.error_message = ""
+
+    def start(self):
         self.build_process = subprocess.Popen(
-            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            self.command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         self.error_message = ""
 
     @property
     def output_lines(self):
+        if not self.build_process:
+            raise Exception("Build command not started")
         i = -1
         inside_error_message = False
         for line in io.TextIOWrapper(self.build_process.stdout, encoding="utf-8"):
