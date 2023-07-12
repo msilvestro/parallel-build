@@ -1,7 +1,8 @@
 from typing import Literal
+
 import platformdirs
-from pydantic import BaseModel
 import yaml
+from pydantic import BaseModel
 
 
 class ProjectSource(BaseModel):

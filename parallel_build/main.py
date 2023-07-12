@@ -1,8 +1,10 @@
 import sys
+
+import chime
+
 from parallel_build.build import Builder
 from parallel_build.config import Config
 from parallel_build.source import Source
-import chime
 
 
 def get_project(config: Config, project_name: str):

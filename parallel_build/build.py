@@ -1,7 +1,8 @@
 import io
-from pathlib import Path
-import yaml
 import subprocess
+from pathlib import Path
+
+import yaml
 
 MAX_LINES = 3108
 
