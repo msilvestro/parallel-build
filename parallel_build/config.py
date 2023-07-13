@@ -15,10 +15,16 @@ class ProjectBuildConfig(BaseModel):
     method: str = "ParallelBuild.WebGLBuilder.Build"
 
 
+class ProjectPostBuildAction(BaseModel):
+    action: Literal["copy", "publish-itch"]
+    params: dict[str, str] | None
+
+
 class Projects(BaseModel):
     name: str
     source: ProjectSource
     build: ProjectBuildConfig
+    post_build: list[ProjectPostBuildAction] | None = None
 
 
 class Notification(BaseModel):

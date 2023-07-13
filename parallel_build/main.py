@@ -3,6 +3,7 @@ import click
 
 from parallel_build.build import Builder
 from parallel_build.config import Config
+from parallel_build.post_build import execute_action
 from parallel_build.source import Source
 
 
@@ -54,5 +55,8 @@ def build(continuous: bool, project_name: str):
                     print(builder.error_message)
                     play_notification(config, return_value)
                     break
+                if project.post_build:
+                    for build_action in project.post_build:
+                        execute_action(build_action, builder.build_path)
             if not continuous:
                 break

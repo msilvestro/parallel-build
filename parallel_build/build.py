@@ -7,12 +7,17 @@ import yaml
 MAX_LINES = 3108
 
 
+def get_build_path(project_path: str, build_path: str):
+    build_path = Path(build_path)
+    if not build_path.is_absolute():
+        return project_path / build_path
+    return build_path
+
+
 class Builder:
     def __init__(self, project_path, build_path, build_method):
         project_path = Path(project_path)
-        build_path = Path(build_path)
-        if not build_path.is_absolute():
-            build_path = project_path / build_path
+        self.build_path = get_build_path(project_path, build_path)
 
         with open(
             project_path / "ProjectSettings" / "ProjectVersion.txt", encoding="utf-8"
@@ -28,7 +33,7 @@ class Builder:
                 f'-projectpath "{project_path}"',
                 "-logFile -",
                 f"-executeMethod {build_method}",
-                f'-buildpath "{build_path}"',
+                f'-buildpath "{self.build_path}"',
             ]
         )
         self.build_process = None
