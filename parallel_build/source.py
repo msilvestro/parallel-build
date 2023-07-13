@@ -24,6 +24,15 @@ class Source:
         return self.source.temporary_project()
 
 
+def ignore_patterns(project_path: Path):
+    def _ignore_patterns(path, names):
+        if Path(path) in (project_path / "Temp", project_path / "Logs"):
+            return names
+        return []
+
+    return _ignore_patterns
+
+
 class LocalSource:
     def __init__(self, project_name: str, project_path: str):
         self.project_name = project_name
@@ -37,7 +46,11 @@ class LocalSource:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
             temp_project_path = temp_dir / self.project_name
-            shutil.copytree(self.project_path, temp_project_path)
+            shutil.copytree(
+                self.project_path,
+                temp_project_path,
+                ignore=ignore_patterns(self.project_path),
+            )
             yield temp_project_path
 
 

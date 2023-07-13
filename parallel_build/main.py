@@ -1,6 +1,5 @@
-import sys
-
 import chime
+import click
 
 from parallel_build.build import Builder
 from parallel_build.config import Config
@@ -22,28 +21,38 @@ def play_notification(config: Config, return_value: int):
         chime.error()
 
 
-if __name__ == "__main__":
+@click.command()
+@click.option("--continuous", "-c", is_flag=True)
+@click.argument("project_name")
+def build(continuous: bool, project_name: str):
     config = Config.load()
     chime.theme(config.notification.theme)
-    project_name = sys.argv[1]
     project = get_project(config, project_name)
     if project is None:
         raise Exception(f"Project '{project_name}' not found")
     with Source(project.name, project.source.type, project.source.value) as source:
-        with source.temporary_project() as temp_project_path:
-            builder = Builder(
-                project_path=temp_project_path,
-                build_path=project.build.path,
-                build_method=project.build.method,
-            )
-            builder.start()
-            for percentage, line in builder.output_lines:
-                print(f"{percentage:0.2f}% | {line}")
-            print()
-            return_value = builder.return_value
-            if return_value == 0:
-                print("Success!")
-            else:
-                print(f"Error ({return_value})")
-                print(builder.error_message)
-            play_notification(config, return_value)
+        while True:
+            with source.temporary_project() as temp_project_path:
+                click.echo(
+                    f"\n== Starting new build of {project.name} in {temp_project_path}..."
+                )
+                builder = Builder(
+                    project_path=temp_project_path,
+                    build_path=project.build.path,
+                    build_method=project.build.method,
+                )
+                builder.start()
+                for percentage, line in builder.output_lines:
+                    print(f"{percentage:0.2f}% | {line}")
+                print()
+                return_value = builder.return_value
+                if return_value == 0:
+                    print("Success!")
+                    play_notification(config, return_value)
+                else:
+                    print(f"Error ({return_value})")
+                    print(builder.error_message)
+                    play_notification(config, return_value)
+                    break
+            if not continuous:
+                break
