@@ -5,6 +5,7 @@ from parallel_build.build import Builder
 from parallel_build.config import Config
 from parallel_build.post_build import execute_action
 from parallel_build.source import Source
+from parallel_build.unity_hub import UnityRecentlyUsedProjectsObserver
 
 
 def get_project(config: Config, project_name: str):
@@ -48,7 +49,9 @@ def build(continuous: bool, project_name: str):
                     build_path=project.build.path,
                 )
                 builder.start()
+                observer = UnityRecentlyUsedProjectsObserver(temp_project_path)
                 for line in builder.output_lines:
+                    observer.check_and_remove()
                     print(line)
                 print()
                 return_value = builder.return_value
