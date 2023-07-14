@@ -1,6 +1,7 @@
 import shutil
 import subprocess
 import tempfile
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
@@ -60,11 +61,33 @@ class GitSource:
         self.temp_project_path = Path(self.temp_dir.name) / project_name
         self.temp_project_path.mkdir()
         subprocess.run(["git", "clone", git_repository, self.temp_project_path])
+        self.build_count = 0
 
     def cleanup(self):
         self.temp_dir.cleanup()
 
     @contextmanager
     def temporary_project(self):
-        subprocess.run(["git", "pull"], cwd=self.temp_project_path)
+        previous_commit = (
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
+            )
+            .decode("utf-8")
+            .strip()
+        )
+        while self.build_count > 0:
+            subprocess.run(["git", "pull"], cwd=self.temp_project_path)
+            current_commit = (
+                subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
+                )
+                .decode("utf-8")
+                .strip()
+            )
+            if current_commit != previous_commit:
+                break
+            print("No new changes, waiting 30 seconds...")
+            time.sleep(30)
+
         yield self.temp_project_path
+        self.build_count += 1
