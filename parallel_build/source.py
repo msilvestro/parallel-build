@@ -44,7 +44,7 @@ class LocalSource:
 
     @contextmanager
     def temporary_project(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
             temp_dir = Path(temp_dir)
             temp_project_path = temp_dir / self.project_name
             shutil.copytree(
@@ -57,7 +57,7 @@ class LocalSource:
 
 class GitSource:
     def __init__(self, project_name: str, git_repository: str):
-        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.temp_project_path = Path(self.temp_dir.name) / project_name
         self.temp_project_path.mkdir()
         subprocess.run(["git", "clone", git_repository, self.temp_project_path])
