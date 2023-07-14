@@ -36,6 +36,7 @@ class Notification(BaseModel):
 
 class Config(BaseModel):
     projects: list[Projects]
+    git_polling_interval: int = 30
     notification: Notification = Notification()
 
     @classmethod

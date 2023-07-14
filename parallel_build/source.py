@@ -9,10 +9,16 @@ from typing import Literal
 
 class Source:
     def __init__(
-        self, project_name: str, source_type: Literal["local", "git"], source_value: str
+        self,
+        project_name: str,
+        source_type: Literal["local", "git"],
+        source_value: str,
+        **kwargs: dict,
     ):
         source_class = {"local": LocalSource, "git": GitSource}[source_type]
-        self.source: LocalSource | GitSource = source_class(project_name, source_value)
+        self.source: LocalSource | GitSource = source_class(
+            project_name, source_value, **kwargs
+        )
 
     def __enter__(self):
         return self
@@ -35,7 +41,7 @@ def ignore_patterns(project_path: Path):
 
 
 class LocalSource:
-    def __init__(self, project_name: str, project_path: str):
+    def __init__(self, project_name: str, project_path: str, **kwargs):
         self.project_name = project_name
         self.project_path = Path(project_path)
 
@@ -56,12 +62,13 @@ class LocalSource:
 
 
 class GitSource:
-    def __init__(self, project_name: str, git_repository: str):
+    def __init__(self, project_name: str, git_repository: str, **kwargs):
         self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.temp_project_path = Path(self.temp_dir.name) / project_name
         self.temp_project_path.mkdir()
         subprocess.run(["git", "clone", git_repository, self.temp_project_path])
         self.build_count = 0
+        self.git_polling_interval = kwargs.get("git_polling_interval", 30)
 
     def cleanup(self):
         self.temp_dir.cleanup()
@@ -86,8 +93,8 @@ class GitSource:
             )
             if current_commit != previous_commit:
                 break
-            print("No new changes, waiting 30 seconds...")
-            time.sleep(30)
+            print(f"No new changes, waiting {self.git_polling_interval} seconds...")
+            time.sleep(self.git_polling_interval)
 
         yield self.temp_project_path
         self.build_count += 1
