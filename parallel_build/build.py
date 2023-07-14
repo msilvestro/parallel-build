@@ -1,4 +1,5 @@
 import io
+import platform
 import subprocess
 from pathlib import Path
 
@@ -12,6 +13,16 @@ def get_build_path(project_path: str, build_path: str):
     if not build_path.is_absolute():
         return project_path / build_path
     return build_path
+
+def get_editor_path(editor_version: str):
+    if platform.system() == "Windows":
+        return f'"C:\\Program Files\\Unity\\Hub\\Editor\\{editor_version}\\Editor\\Unity.exe"'
+    elif platform.system() == "Darwin":
+        return f"/Applications/Unity/Hub/Editor/{editor_version}/Unity.app/Contents/MacOS/Unity"
+    elif platform.system() == "Linux":
+        return f"/Applications/Unity/Hub/Editor/{editor_version}/Unity.app/Contents/Linux/Unity"
+    else:
+        raise Exception(f"Platform {platform.system()} not supported")
 
 
 class Builder:
@@ -27,7 +38,7 @@ class Builder:
 
         self.command = " ".join(
             [
-                f'"C:\\Program Files\\Unity\\Hub\\Editor\\{editor_version}\\Editor\\Unity.exe"',
+                get_editor_path(editor_version),
                 "-quit",
                 "-batchmode",
                 f'-projectpath "{project_path}"',
