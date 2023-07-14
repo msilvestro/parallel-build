@@ -43,8 +43,8 @@ def build(continuous: bool, project_name: str):
                     build_path=project.build.path,
                 )
                 builder.start()
-                for percentage, line in builder.output_lines:
-                    print(f"{percentage:0.2f}% | {line}")
+                for line in builder.output_lines:
+                    print(line)
                 print()
                 return_value = builder.return_value
                 if return_value == 0:

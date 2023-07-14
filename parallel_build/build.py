@@ -81,7 +81,7 @@ def get_build_args(project_path: Path, build_target, build_path):
     if build_target == "WebGL":
         editor_path = project_path / "Assets" / "Editor"
         editor_path.mkdir(exist_ok=True, parents=True)
-        with open(editor_path / "WebGLBuilder.cs", "a") as f:
+        with open(editor_path / "WebGLBuilder.cs", "w") as f:
             f.write(WEBGL_BUILDER)
         return (
             f"-executeMethod ParallelBuild.WebGLBuilder.Build -buildpath {build_path}"
@@ -123,10 +123,8 @@ class Builder:
     def output_lines(self):
         if not self.build_process:
             raise Exception("Build command not started")
-        i = -1
         inside_error_message = False
         for line in io.TextIOWrapper(self.build_process.stdout, encoding="utf-8"):
-            i += 1
             line = line.strip()
             if inside_error_message:
                 if line == "":
@@ -135,8 +133,7 @@ class Builder:
                     self.error_message += line + "\n"
             if line == "Aborting batchmode due to failure:":
                 inside_error_message = True
-            estimated_percentage = min(i / MAX_LINES * 100, 100)
-            yield estimated_percentage, line
+            yield line
 
     @property
     def return_value(self):
