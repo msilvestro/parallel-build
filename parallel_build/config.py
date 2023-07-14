@@ -23,8 +23,8 @@ class ProjectPostBuildAction(BaseModel):
 class Projects(BaseModel):
     name: str
     source: ProjectSource
-    build: ProjectBuildConfig
-    post_build: list[ProjectPostBuildAction] | None = None
+    build: ProjectBuildConfig = ProjectBuildConfig()
+    post_build: list[ProjectPostBuildAction] = []
 
 
 class Notification(BaseModel):
@@ -34,7 +34,7 @@ class Notification(BaseModel):
 
 class Config(BaseModel):
     projects: list[Projects]
-    notification: Notification
+    notification: Notification = Notification()
 
     @classmethod
     def load(cls):
