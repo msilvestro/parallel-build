@@ -14,6 +14,7 @@ def get_build_path(project_path: str, build_path: str):
         return project_path / build_path
     return build_path
 
+
 def get_editor_path(editor_version: str):
     if platform.system() == "Windows":
         return f'"C:\\Program Files\\Unity\\Hub\\Editor\\{editor_version}\\Editor\\Unity.exe"'
@@ -25,8 +26,71 @@ def get_editor_path(editor_version: str):
         raise Exception(f"Platform {platform.system()} not supported")
 
 
+WEBGL_BUILDER = """
+using System;
+using System.Linq;
+using UnityEditor;
+
+namespace ParallelBuild
+{
+    public class WebGLBuilder
+    {
+        private static string[] GetAllScenes()
+        {
+            return EditorBuildSettings.scenes
+                 .Where(scene => scene.enabled)
+                 .Select(scene => scene.path)
+                 .ToArray();
+        }
+
+        private static string GetArg(string name, string defaultValue = null)
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == name && args.Length > i + 1)
+                {
+                    return args[i + 1];
+                }
+            }
+            return defaultValue;
+        }
+
+        public static bool Build()
+        {
+            return Build(GetArg("-buildpath", "Build/WebGL"));
+        }
+
+        public static bool Build(string buildPath)
+        {
+            BuildPlayerOptions options = new BuildPlayerOptions()
+            {
+                locationPathName = buildPath,
+                target = BuildTarget.WebGL,
+                scenes = GetAllScenes()
+            };
+            var buildReport = BuildPipeline.BuildPlayer(options);
+            return buildReport.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded;
+        }
+    }
+}
+"""
+
+
+def get_build_args(project_path: Path, build_target, build_path):
+    if build_target == "WebGL":
+        editor_path = project_path / "Assets" / "Editor"
+        editor_path.mkdir(exist_ok=True, parents=True)
+        with open(editor_path / "WebGLBuilder.cs", "a") as f:
+            f.write(WEBGL_BUILDER)
+        return (
+            f"-executeMethod ParallelBuild.WebGLBuilder.Build -buildpath {build_path}"
+        )
+    return f'-build{build_target}Player "{build_path}"'
+
+
 class Builder:
-    def __init__(self, project_path, build_path, build_method):
+    def __init__(self, project_path, build_target, build_path):
         project_path = Path(project_path)
         self.build_path = get_build_path(project_path, build_path)
 
@@ -43,8 +107,7 @@ class Builder:
                 "-batchmode",
                 f'-projectpath "{project_path}"',
                 "-logFile -",
-                f"-executeMethod {build_method}",
-                f'-buildpath "{self.build_path}"',
+                get_build_args(project_path, build_target, build_path),
             ]
         )
         self.build_process = None

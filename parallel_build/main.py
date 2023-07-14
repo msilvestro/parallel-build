@@ -39,8 +39,8 @@ def build(continuous: bool, project_name: str):
                 )
                 builder = Builder(
                     project_path=temp_project_path,
+                    build_target=project.build.target,
                     build_path=project.build.path,
-                    build_method=project.build.method,
                 )
                 builder.start()
                 for percentage, line in builder.output_lines:

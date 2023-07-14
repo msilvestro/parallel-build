@@ -11,8 +11,10 @@ class ProjectSource(BaseModel):
 
 
 class ProjectBuildConfig(BaseModel):
+    target: Literal[
+        "Windows", "Windows64", "OSXUniversal", "Linux64", "WebGL"
+    ] = "WebGL"
     path: str = "Build/WebGL"
-    method: str = "ParallelBuild.WebGLBuilder.Build"
 
 
 class ProjectPostBuildAction(BaseModel):
