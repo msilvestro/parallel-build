@@ -19,5 +19,10 @@ def copy_build(build_path: str, target_path: str):
 def publish_itch(build_path: str, itch_user: str, itch_game: str):
     itch_path = f"{itch_user}/{itch_game}:webgl"
     print(f"\n== Post buid: publishing to itch ({itch_path})...")
-    subprocess.run(["butler", "push", build_path, itch_path])
-    subprocess.run(["butler", "status", itch_path])
+    try:
+        subprocess.run(["butler", "push", build_path, itch_path])
+        subprocess.run(["butler", "status", itch_path])
+    except FileNotFoundError:
+        print(
+            "Cannot find `butler` for Itch publish! Please install it: https://itch.io/docs/butler/"
+        )

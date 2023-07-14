@@ -16,6 +16,7 @@ click = "^8.1.5"
 
 [tool.poetry.scripts]
 build = "parallel_build.main:build"
+check = "parallel_build.check:check"
 
 [build-system]
 requires = ["poetry-core"]
