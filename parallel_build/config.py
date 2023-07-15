@@ -53,3 +53,8 @@ class Config(BaseModel):
         ) as file:
             config = yaml.safe_load(file.read())
         return cls.model_validate(config)
+
+    @classmethod
+    def loads(cls, config_str: str):
+        config = yaml.safe_load(config_str)
+        return cls.model_validate(config)
