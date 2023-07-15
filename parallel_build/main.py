@@ -1,10 +1,7 @@
 import chime
-import click
 
 from parallel_build.build import Builder
-from parallel_build.check import check
 from parallel_build.config import Config
-from parallel_build.config_cli import config
 from parallel_build.post_build import execute_action
 from parallel_build.source import Source
 from parallel_build.unity_hub import UnityRecentlyUsedProjectsObserver
@@ -25,14 +22,6 @@ def play_notification(config: Config, return_value: int):
         chime.error()
 
 
-@click.group()
-def cli():
-    ...
-
-
-@cli.command()
-@click.option("--continuous", "-c", is_flag=True)
-@click.argument("project_name")
 def build(continuous: bool, project_name: str):
     config = Config.load()
     chime.theme(config.notification.theme)
@@ -47,9 +36,7 @@ def build(continuous: bool, project_name: str):
     ) as source:
         while True:
             with source.temporary_project() as temp_project_path:
-                click.echo(
-                    f"\n== Starting new build of {project.name} in {temp_project_path}..."
-                )
+                yield "\n== Starting new build of {project.name} in {temp_project_path}..."
                 builder = Builder(
                     project_path=temp_project_path,
                     build_target=project.build.target,
@@ -59,22 +46,18 @@ def build(continuous: bool, project_name: str):
                 observer = UnityRecentlyUsedProjectsObserver(temp_project_path)
                 for line in builder.output_lines:
                     observer.check_and_remove()
-                    print(line)
-                print()
+                    yield line
+                yield ""
                 return_value = builder.return_value
                 if return_value == 0:
-                    print("Success!")
+                    yield "Success!"
                     play_notification(config, return_value)
                 else:
-                    print(f"Error ({return_value})")
-                    print(builder.error_message)
+                    yield f"Error ({return_value})"
+                    yield builder.error_message
                     play_notification(config, return_value)
                     break
                 for build_action in project.post_build:
-                    execute_action(build_action, builder.build_path)
+                    yield from execute_action(build_action, builder.build_path)
             if not continuous:
                 break
-
-
-cli.add_command(check)
-cli.add_command(config)

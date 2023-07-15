@@ -14,7 +14,7 @@ def show():
         CONFIG_PATH,
         encoding="utf-8",
     ) as file:
-        return file.read()
+        print(file.read())
 
 
 @config.command()
