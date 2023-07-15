@@ -17,7 +17,6 @@ def play_notification():
 
 def build(continuous: bool, project_name: str):
     config = Config.load()
-    print("\a")
     project = get_project(config, project_name)
     if project is None:
         raise Exception(f"Project '{project_name}' not found")

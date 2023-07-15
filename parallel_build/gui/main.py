@@ -1,6 +1,7 @@
 import sys
 
 from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -19,6 +20,7 @@ class BuildWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Parallel Build")
+        self.resize(500, 300)
 
         config = Config.load()
 
@@ -34,6 +36,7 @@ class BuildWindow(QWidget):
 
         self.text_area = QPlainTextEdit()
         self.text_area.setReadOnly(True)
+        self.text_area.setFont(QFont("Lucida Console"))
 
         layout = QVBoxLayout()
         layout.addWidget(self.projects_combobox)

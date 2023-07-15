@@ -15,6 +15,7 @@ pyside6 = "^6.5.1.1"
 
 [tool.poetry.scripts]
 parallelbuild = "parallel_build.cli:cli"
+parallelbuild-gui = "parallel_build.gui.main:show_gui"
 
 [build-system]
 requires = ["poetry-core"]
