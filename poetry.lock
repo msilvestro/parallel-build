@@ -13,18 +13,6 @@ files = [
 ]
 
 [[package]]
-name = "chime"
-version = "0.7.0"
-description = "Python sound notifications made easy."
-category = "main"
-optional = false
-python-versions = ">=3.6,<4.0"
-files = [
-    {file = "chime-0.7.0-py3-none-any.whl", hash = "sha256:9626f8151cb008b1e0ffb7de6d1834b7013ba5fc4c4e3c9ba6e29dc9bf5feac6"},
-    {file = "chime-0.7.0.tar.gz", hash = "sha256:ba4af8934ec8bd9a89a340b4433b2e500097b979823386432be7128e0b201f0d"},
-]
-
-[[package]]
 name = "click"
 version = "8.1.5"
 description = "Composable command line interface toolkit"
@@ -50,22 +38,6 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-
-[[package]]
-name = "platformdirs"
-version = "3.8.1"
-description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "platformdirs-3.8.1-py3-none-any.whl", hash = "sha256:cec7b889196b9144d088e4c57d9ceef7374f6c39694ad1577a0aab50d27ea28c"},
-    {file = "platformdirs-3.8.1.tar.gz", hash = "sha256:f87ca4fcff7d2b0f81c6a748a77973d7af0f4d526f98f308477c3c436c74d528"},
-]
-
-[package.extras]
-docs = ["furo (>=2023.5.20)", "proselint (>=0.13)", "sphinx (>=7.0.1)", "sphinx-autodoc-typehints (>=1.23,!=1.23.4)"]
-test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.3.1)", "pytest-cov (>=4.1)", "pytest-mock (>=3.10)"]
 
 [[package]]
 name = "pydantic"
@@ -342,4 +314,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.12"
-content-hash = "3d39a94fc3ccfed9483091d5c61aef1fd83a1f01516f8e7a444f54382ef70f3c"
+content-hash = "3d84fee2acc10fa609c24a19184cc39c38d86da4727f8406988fc6a5e118225a"
