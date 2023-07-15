@@ -13,7 +13,7 @@ class UnityRecentlyUsedProjectsObserver:
     def check_and_remove(self):
         if self.key_found:
             return
-        if not platform.system() == "Windows":
+        if not (platform.system() == "Windows" or platform.system() == "Darwin"):
             return
         key_value = check_unity_recently_used_projects_paths(self.temp_project_path)
         if key_value:
@@ -38,6 +38,22 @@ def check_unity_recently_used_projects_paths(temp_project_path: Path):
                 except WindowsError:
                     break
         return False
+    elif platform.system() == "Darwin":
+        import plistlib
+
+        with open(
+            "/Users/matt/Library/Preferences/com.unity3d.UnityEditor5.x.plist", "rb"
+        ) as plist:
+            unity_preferences = plistlib.load(plist)
+            base_key = None
+            private_key = None
+            for key, value in unity_preferences.items():
+                if key.startswith("RecentlyUsedProjectPaths"):
+                    if value == str(temp_project_path):
+                        base_key = key
+                    elif value == f"/private{temp_project_path}":
+                        private_key = key
+            return (base_key, private_key) if base_key and private_key else False
     else:
         return False
 
@@ -52,3 +68,17 @@ def delete_unity_recently_used_projects_paths(key_name: str):
             access=winreg.KEY_WRITE,
         ) as unity_key:
             winreg.DeleteValue(unity_key, key_name)
+    elif platform.system() == "Darwin":
+        import plistlib
+
+        with open(
+            "/Users/matt/Library/Preferences/com.unity3d.UnityEditor5.x.plist", "rb"
+        ) as plist:
+            unity_preferences = plistlib.load(plist)
+        base_key, private_key = key_name
+        del unity_preferences[base_key]
+        del unity_preferences[private_key]
+        with open(
+            "/Users/matt/Library/Preferences/com.unity3d.UnityEditor5.x.plist", "wb"
+        ) as plist:
+            plistlib.dump(unity_preferences, plist)
