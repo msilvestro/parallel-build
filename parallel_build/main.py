@@ -52,7 +52,7 @@ def build(continuous: bool, project_name: str):
                 observer = UnityRecentlyUsedProjectsObserver(temp_project_path)
                 for line in builder.output_lines:
                     observer.check_and_remove()
-                    # print(line)
+                    print(line)
                 print()
                 return_value = builder.return_value
                 if return_value == 0:

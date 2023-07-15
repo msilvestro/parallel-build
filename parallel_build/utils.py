@@ -11,11 +11,12 @@ class OperatingSystem(Enum):
     @classmethod
     @property
     def current(cls):
-        if platform.system() == "Windows":
-            return cls.windows
-        elif platform.system() == "Darwin":
-            return cls.macos
-        elif platform.system() == "Linux":
-            return cls.linux
-        else:
-            return cls.unkwnow
+        match platform.system():
+            case "Windows":
+                return cls.windows
+            case "Darwin":
+                return cls.macos
+            case "Linux":
+                return cls.linux
+            case _:
+                return cls.unkwnow
