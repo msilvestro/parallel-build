@@ -15,3 +15,6 @@ cli.add_command(build)
 cli.add_command(check)
 cli.add_command(config)
 cli.add_command(gui)
+
+if __name__ == "__main__":
+    cli()

@@ -35,15 +35,9 @@ class Projects(BaseModel):
     post_build: list[ProjectPostBuildAction] = []
 
 
-class Notification(BaseModel):
-    enabled: bool = False
-    theme: str = "pokemon"
-
-
 class Config(BaseModel):
     projects: list[Projects]
     git_polling_interval: int = 30
-    notification: Notification = Notification()
 
     @classmethod
     def load(cls):

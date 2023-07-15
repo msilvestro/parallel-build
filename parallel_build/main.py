@@ -1,5 +1,3 @@
-import chime
-
 from parallel_build.build import Builder
 from parallel_build.config import Config
 from parallel_build.post_build import execute_action
@@ -13,18 +11,13 @@ def get_project(config: Config, project_name: str):
             return project
 
 
-def play_notification(config: Config, return_value: int):
-    if not config.notification.enabled:
-        return
-    if return_value == 0:
-        chime.success()
-    else:
-        chime.error()
+def play_notification():
+    print("\a")
 
 
 def build(continuous: bool, project_name: str):
     config = Config.load()
-    chime.theme(config.notification.theme)
+    print("\a")
     project = get_project(config, project_name)
     if project is None:
         raise Exception(f"Project '{project_name}' not found")
@@ -51,11 +44,11 @@ def build(continuous: bool, project_name: str):
                 return_value = builder.return_value
                 if return_value == 0:
                     yield "Success!"
-                    play_notification(config, return_value)
+                    play_notification()
                 else:
                     yield f"Error ({return_value})"
                     yield builder.error_message
-                    play_notification(config, return_value)
+                    play_notification()
                     break
                 for build_action in project.post_build:
                     yield from execute_action(build_action, builder.build_path)
