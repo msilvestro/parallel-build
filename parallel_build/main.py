@@ -2,6 +2,7 @@ import chime
 import click
 
 from parallel_build.build import Builder
+from parallel_build.check import check
 from parallel_build.config import Config
 from parallel_build.post_build import execute_action
 from parallel_build.source import Source
@@ -23,7 +24,12 @@ def play_notification(config: Config, return_value: int):
         chime.error()
 
 
-@click.command()
+@click.group()
+def cli():
+    ...
+
+
+@cli.command()
 @click.option("--continuous", "-c", is_flag=True)
 @click.argument("project_name")
 def build(continuous: bool, project_name: str):
@@ -67,3 +73,6 @@ def build(continuous: bool, project_name: str):
                     execute_action(build_action, builder.build_path)
             if not continuous:
                 break
+
+
+cli.add_command(check)

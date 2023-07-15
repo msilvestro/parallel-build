@@ -15,8 +15,7 @@ pydantic = "^2.0.2"
 click = "^8.1.5"
 
 [tool.poetry.scripts]
-build = "parallel_build.main:build"
-check = "parallel_build.check:check"
+parallelbuild = "parallel_build.main:cli"
 
 [build-system]
 requires = ["poetry-core"]
