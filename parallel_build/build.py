@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml
 
+from parallel_build.utils import OperatingSystem
+
 MAX_LINES = 3108
 
 
@@ -16,11 +18,11 @@ def get_build_path(project_path: str, build_path: str):
 
 
 def get_editor_path(editor_version: str):
-    if platform.system() == "Windows":
+    if OperatingSystem.current == OperatingSystem.windows:
         return f'"C:\\Program Files\\Unity\\Hub\\Editor\\{editor_version}\\Editor\\Unity.exe"'
-    elif platform.system() == "Darwin":
+    elif OperatingSystem.current == OperatingSystem.macos:
         return f"/Applications/Unity/Hub/Editor/{editor_version}/Unity.app/Contents/MacOS/Unity"
-    elif platform.system() == "Linux":
+    elif OperatingSystem.current == OperatingSystem.linux:
         return f"/Applications/Unity/Hub/Editor/{editor_version}/Unity.app/Contents/Linux/Unity"
     else:
         raise Exception(f"Platform {platform.system()} not supported")

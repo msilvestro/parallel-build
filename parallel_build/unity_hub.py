@@ -1,5 +1,6 @@
-import platform
 from pathlib import Path
+
+from parallel_build.utils import OperatingSystem
 
 
 class UnityRecentlyUsedProjectsObserver:
@@ -13,7 +14,10 @@ class UnityRecentlyUsedProjectsObserver:
     def check_and_remove(self):
         if self.key_found:
             return
-        if not (platform.system() == "Windows" or platform.system() == "Darwin"):
+        if OperatingSystem.current not in (
+            OperatingSystem.windows,
+            OperatingSystem.linux,
+        ):
             return
         key_value = check_unity_recently_used_projects_paths(self.temp_project_path)
         if key_value:
@@ -22,7 +26,7 @@ class UnityRecentlyUsedProjectsObserver:
 
 
 def check_unity_recently_used_projects_paths(temp_project_path: Path):
-    if platform.system() == "Windows":
+    if OperatingSystem.current == OperatingSystem.windows:
         import winreg
 
         with winreg.OpenKey(
@@ -34,11 +38,12 @@ def check_unity_recently_used_projects_paths(temp_project_path: Path):
                     if key_name.startswith("RecentlyUsedProjectPaths"):
                         project_path = Path(key_value[:-1].decode("utf-8"))
                         if project_path == temp_project_path:
+                            print("FOUND!")
                             return key_name
                 except WindowsError:
                     break
         return False
-    elif platform.system() == "Darwin":
+    elif OperatingSystem.current == OperatingSystem.macos:
         import plistlib
 
         with open(
@@ -59,7 +64,7 @@ def check_unity_recently_used_projects_paths(temp_project_path: Path):
 
 
 def delete_unity_recently_used_projects_paths(key_name: str):
-    if platform.system() == "Windows":
+    if OperatingSystem.current == OperatingSystem.windows:
         import winreg
 
         with winreg.OpenKey(
@@ -68,7 +73,7 @@ def delete_unity_recently_used_projects_paths(key_name: str):
             access=winreg.KEY_WRITE,
         ) as unity_key:
             winreg.DeleteValue(unity_key, key_name)
-    elif platform.system() == "Darwin":
+    elif OperatingSystem.current == OperatingSystem.macos:
         import plistlib
 
         with open(
