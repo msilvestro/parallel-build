@@ -36,7 +36,7 @@ def build(continuous: bool, project_name: str):
     ) as source:
         while True:
             with source.temporary_project() as temp_project_path:
-                yield "\n== Starting new build of {project.name} in {temp_project_path}..."
+                yield f"\n== Starting new build of {project.name} in {temp_project_path}..."
                 builder = Builder(
                     project_path=temp_project_path,
                     build_target=project.build.target,
