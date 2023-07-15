@@ -1,10 +1,11 @@
 import shutil
-import subprocess
 import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Literal
+
+from parallel_build.utils import run_subprocess
 
 
 class Source:
@@ -66,7 +67,7 @@ class GitSource:
         self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.temp_project_path = Path(self.temp_dir.name) / project_name
         self.temp_project_path.mkdir()
-        subprocess.run(["git", "clone", git_repository, self.temp_project_path])
+        run_subprocess(["git", "clone", git_repository, self.temp_project_path])
         self.build_count = 0
         self.git_polling_interval = kwargs.get("git_polling_interval", 30)
 
@@ -75,21 +76,13 @@ class GitSource:
 
     @contextmanager
     def temporary_project(self):
-        previous_commit = (
-            subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
-            )
-            .decode("utf-8")
-            .strip()
+        previous_commit = run_subprocess(
+            ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
         )
         while self.build_count > 0:
-            subprocess.run(["git", "pull"], cwd=self.temp_project_path)
-            current_commit = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
-                )
-                .decode("utf-8")
-                .strip()
+            run_subprocess(["git", "pull"], cwd=self.temp_project_path)
+            current_commit = run_subprocess(
+                ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
             )
             if current_commit != previous_commit:
                 break

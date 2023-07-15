@@ -1,4 +1,5 @@
 import platform
+import subprocess
 from enum import Enum
 
 
@@ -20,3 +21,7 @@ class OperatingSystem(Enum):
                 return cls.linux
             case _:
                 return cls.unkwnow
+
+
+def run_subprocess(*args, **kwargs) -> str:
+    return subprocess.check_output(*args, **kwargs).decode("utf-8").strip()
