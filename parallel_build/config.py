@@ -1,8 +1,14 @@
+from pathlib import Path
 from typing import Literal
 
-import platformdirs
+import click
 import yaml
 from pydantic import BaseModel
+
+CONFIG_PATH = Path(click.get_app_dir("ParallelBuild")) / "config.yaml"
+if not CONFIG_PATH.exists():
+    CONFIG_PATH.parent.mkdir(exist_ok=True)
+    CONFIG_PATH.touch()
 
 
 class ProjectSource(BaseModel):
@@ -42,8 +48,8 @@ class Config(BaseModel):
     @classmethod
     def load(cls):
         with open(
-            platformdirs.user_data_path() / "ParallelBuild" / "config.yaml",
+            CONFIG_PATH,
             encoding="utf-8",
-        ) as f:
-            config = yaml.safe_load(f.read())
+        ) as file:
+            config = yaml.safe_load(file.read())
         return cls.model_validate(config)

@@ -4,6 +4,7 @@ import click
 from parallel_build.build import Builder
 from parallel_build.check import check
 from parallel_build.config import Config
+from parallel_build.config_cli import config
 from parallel_build.post_build import execute_action
 from parallel_build.source import Source
 from parallel_build.unity_hub import UnityRecentlyUsedProjectsObserver
@@ -76,3 +77,4 @@ def build(continuous: bool, project_name: str):
 
 
 cli.add_command(check)
+cli.add_command(config)
