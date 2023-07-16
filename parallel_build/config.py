@@ -9,9 +9,17 @@ from pydantic import BaseModel
 CONFIG_PATH = Path(click.get_app_dir("ParallelBuild")) / "config.yaml"
 
 
+class ProjectSourceType(str, Enum):
+    local = "local"
+    git = "git"
+
+
 class ProjectSource(BaseModel):
-    type: Literal["local", "git"]
+    type: ProjectSourceType
     value: str
+
+    class Config:
+        use_enum_values = True
 
 
 class BuildTarget(str, Enum):
@@ -67,9 +75,11 @@ class Config(BaseModel):
         return cls.model_validate(config)
 
     def save(self):
+        yaml_config = yaml.safe_dump(self.model_dump())
+        print(yaml_config)
         with open(
             CONFIG_PATH,
             "w",
             encoding="utf-8",
         ) as file:
-            yaml.safe_dump(self.model_dump(), file)
+            file.write(yaml_config)

@@ -16,7 +16,10 @@ from PySide6.QtWidgets import (
 )
 
 from parallel_build.config import Config, Project
-from parallel_build.gui.new_project_dialog import NewLocalProjectDialog
+from parallel_build.gui.new_project_dialog import (
+    NewGitProjectDialog,
+    NewLocalProjectDialog,
+)
 from parallel_build.main import build
 
 
@@ -99,11 +102,14 @@ class BuildWindow(QWidget):
             match choice:
                 case "Local folder":
                     NewLocalProjectDialog(self).exec()
+                case "Git repository":
+                    NewGitProjectDialog(self).exec()
 
     def add_project(self, project: Project):
         self.config.projects.append(project)
         self.config.save()
         self.update_from_config()
+        self.projects_combobox.setCurrentIndex(self.config.projects.index(project))
         print(f"Successfully added {project.name}")
 
     def remove_project(self):

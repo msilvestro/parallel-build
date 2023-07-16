@@ -13,23 +13,25 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from parallel_build.config import BuildTarget, Project
+from parallel_build.config import BuildTarget, Project, ProjectSourceType
 
 
-class NewLocalProjectDialog(QDialog):
+class NewProjectDialog(QDialog):
+    source_type: ProjectSourceType
+
+    def select_source_layout(self):
+        raise NotImplementedError
+
+    @property
+    def source_value(self):
+        raise NotImplementedError
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Add new project")
         self.setMinimumWidth(300)
 
-        select_project_path_layout = QHBoxLayout()
-        self.project_path_textbox = QLineEdit()
-        self.project_path_textbox.setPlaceholderText("Select project path...")
-        self.project_path_textbox.setReadOnly(True)
-        self.select_project_path_button = QPushButton("Choose...")
-        self.select_project_path_button.clicked.connect(self.select_project_path)
-        select_project_path_layout.addWidget(self.project_path_textbox)
-        select_project_path_layout.addWidget(self.select_project_path_button)
+        select_source_layout = self.select_source_layout()
 
         main_form = QFormLayout()
         self.project_name_label = QLabel("Project name:")
@@ -57,7 +59,7 @@ class NewLocalProjectDialog(QDialog):
         self.button_box.rejected.connect(self.cancel)
 
         layout = QVBoxLayout()
-        layout.addLayout(select_project_path_layout)
+        layout.addLayout(select_source_layout)
         layout.addLayout(main_form)
         layout.addWidget(self.button_box)
 
@@ -77,8 +79,8 @@ class NewLocalProjectDialog(QDialog):
                 {
                     "name": self.project_name_textbox.text(),
                     "source": {
-                        "type": "local",
-                        "value": self.project_path_textbox.text(),
+                        "type": self.source_type,
+                        "value": self.source_value,
                     },
                     "build": {
                         "target": self.build_target_combobox.currentText(),
@@ -91,3 +93,41 @@ class NewLocalProjectDialog(QDialog):
 
     def cancel(self):
         self.close()
+
+
+class NewLocalProjectDialog(NewProjectDialog):
+    source_type = ProjectSourceType.local
+
+    def select_source_layout(self):
+        select_project_path_layout = QHBoxLayout()
+        self.project_path_textbox = QLineEdit()
+        self.project_path_textbox.setPlaceholderText("Select project path...")
+        self.project_path_textbox.setReadOnly(True)
+        self.select_project_path_button = QPushButton("Choose...")
+        self.select_project_path_button.clicked.connect(self.select_project_path)
+        select_project_path_layout.addWidget(self.project_path_textbox)
+        select_project_path_layout.addWidget(self.select_project_path_button)
+        return select_project_path_layout
+
+    @property
+    def source_value(self):
+        return self.project_path_textbox.text()
+
+
+class NewGitProjectDialog(NewProjectDialog):
+    source_type = ProjectSourceType.git
+
+    def select_source_layout(self):
+        select_project_path_layout = QVBoxLayout()
+        self.project_repository_label = QLabel("Git repository:")
+        self.project_repository_textbox = QLineEdit()
+        self.project_repository_textbox.setPlaceholderText(
+            "git@github.com:gfreeman/black-mesa.git"
+        )
+        select_project_path_layout.addWidget(self.project_repository_label)
+        select_project_path_layout.addWidget(self.project_repository_textbox)
+        return select_project_path_layout
+
+    @property
+    def source_value(self):
+        return self.project_repository_textbox.text()
