@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QInputDialog,
+    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
@@ -32,9 +33,12 @@ class BuildWindow(QWidget):
 
         self.add_project_button = QPushButton("Add...")
         self.add_project_button.pressed.connect(self.open_new_project_dialog)
+        self.remove_project_button = QPushButton("Remove...")
+        self.remove_project_button.pressed.connect(self.remove_project)
         self.edit_project_button = QPushButton("Edit...")
         projects_buttons_layout = QHBoxLayout()
         projects_buttons_layout.addWidget(self.add_project_button)
+        projects_buttons_layout.addWidget(self.remove_project_button)
         projects_buttons_layout.addWidget(self.edit_project_button)
 
         self.continuous_checkbox = QCheckBox(text="Continuous build")
@@ -94,13 +98,32 @@ class BuildWindow(QWidget):
         if ok:
             match choice:
                 case "Local folder":
-                    print(NewLocalProjectDialog(self).exec())
+                    NewLocalProjectDialog(self).exec()
 
     def add_project(self, project: Project):
         self.config.projects.append(project)
         self.config.save()
         self.update_from_config()
-        print("Successfully updated config")
+        print(f"Successfully added {project.name}")
+
+    def remove_project(self):
+        project_name = self.projects_combobox.currentText()
+        reply = QMessageBox.question(
+            self,
+            "Remove project",
+            f"Do you really want to remove {project_name}?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            project_to_remove = [
+                project
+                for project in self.config.projects
+                if project.name == project_name
+            ][0]
+            self.config.projects.remove(project_to_remove)
+            self.config.save()
+            self.update_from_config()
+            print(f"Successfully removed {project_to_remove.name}")
 
 
 class BuildSignals(QObject):
