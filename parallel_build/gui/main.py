@@ -6,13 +6,16 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QHBoxLayout,
+    QInputDialog,
     QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
-from parallel_build.config import Config
+from parallel_build.config import Config, Project
+from parallel_build.gui.new_project_dialog import NewLocalProjectDialog
 from parallel_build.main import build
 
 
@@ -20,18 +23,24 @@ class BuildWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Parallel Build")
-        self.resize(500, 300)
+        self.resize(300, 300)
 
-        config = Config.load()
+        self.config = Config.load()
 
         self.projects_combobox = QComboBox()
-        for project in config.projects:
-            self.projects_combobox.addItem(project.name)
+        self.update_from_config()
+
+        self.add_project_button = QPushButton("Add...")
+        self.add_project_button.pressed.connect(self.open_new_project_dialog)
+        self.edit_project_button = QPushButton("Edit...")
+        projects_buttons_layout = QHBoxLayout()
+        projects_buttons_layout.addWidget(self.add_project_button)
+        projects_buttons_layout.addWidget(self.edit_project_button)
 
         self.continuous_checkbox = QCheckBox(text="Continuous build")
         self.continuous_checkbox.setChecked(False)
 
-        self.build_button = QPushButton("Execute")
+        self.build_button = QPushButton("Build")
         self.build_button.pressed.connect(self.start_build_process)
 
         self.text_area = QPlainTextEdit()
@@ -40,6 +49,7 @@ class BuildWindow(QWidget):
 
         layout = QVBoxLayout()
         layout.addWidget(self.projects_combobox)
+        layout.addLayout(projects_buttons_layout)
         layout.addWidget(self.continuous_checkbox)
         layout.addWidget(self.build_button)
         layout.addWidget(self.text_area)
@@ -49,6 +59,12 @@ class BuildWindow(QWidget):
         self.thread = BuildThread(self)
         self.thread.started.connect(self.disable_button)
         self.thread.finished.connect(self.enable_button)
+
+    def update_from_config(self):
+        self.projects_combobox.clear()
+        self.projects_combobox.addItems(
+            [project.name for project in self.config.projects]
+        )
 
     def enable_button(self):
         self.build_button.setDisabled(False)
@@ -66,6 +82,25 @@ class BuildWindow(QWidget):
             self.continuous_checkbox.isChecked(), self.projects_combobox.currentText()
         )
         self.thread.start()
+
+    def open_new_project_dialog(self):
+        choice, ok = QInputDialog.getItem(
+            self,
+            "Select project type",
+            "Project type:",
+            ("Local folder", "Git repository"),
+            editable=False,
+        )
+        if ok:
+            match choice:
+                case "Local folder":
+                    print(NewLocalProjectDialog(self).exec())
+
+    def add_project(self, project: Project):
+        self.config.projects.append(project)
+        self.config.save()
+        self.update_from_config()
+        print("Successfully updated config")
 
 
 class BuildSignals(QObject):
