@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 from parallel_build.config import BuildTarget, Project, ProjectSourceType
 
 
-class NewProjectDialog(QDialog):
+class ManageProjectDialog(QDialog):
     source_type: ProjectSourceType
 
     def select_source_layout(self):
@@ -26,9 +26,12 @@ class NewProjectDialog(QDialog):
     def source_value(self):
         raise NotImplementedError
 
-    def __init__(self, parent=None):
+    def set_source_value(self, value: str):
+        raise NotImplementedError
+
+    def __init__(self, parent, window_title: str, accept_button_text: str):
         super().__init__(parent)
-        self.setWindowTitle("Add new project")
+        self.setWindowTitle(window_title)
         self.setMinimumWidth(300)
 
         select_source_layout = self.select_source_layout()
@@ -53,9 +56,10 @@ class NewProjectDialog(QDialog):
         self.add_button.setDefault(True)
         self.cancel_button = QPushButton("Cancel")
         self.button_box = QDialogButtonBox()
-        self.button_box.addButton("Add", QDialogButtonBox.ButtonRole.AcceptRole)
+        self.button_box.addButton(
+            accept_button_text, QDialogButtonBox.ButtonRole.AcceptRole
+        )
         self.button_box.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
-        self.button_box.accepted.connect(self.add)
         self.button_box.rejected.connect(self.cancel)
 
         layout = QVBoxLayout()
@@ -65,37 +69,53 @@ class NewProjectDialog(QDialog):
 
         self.setLayout(layout)
 
-    def select_project_path(self):
-        project_path = Path(
-            QFileDialog.getExistingDirectory(self, "Select project path")
+    def generate_project(self):
+        return Project.model_validate(
+            {
+                "name": self.project_name_textbox.text(),
+                "source": {
+                    "type": self.source_type,
+                    "value": self.source_value,
+                },
+                "build": {
+                    "target": self.build_target_combobox.currentText(),
+                    "path": self.build_path_textbox.text(),
+                },
+            }
         )
-        self.project_path_textbox.setText(str(project_path))
-        if self.project_name_textbox.text() == "":
-            self.project_name_textbox.setText(project_path.name)
-
-    def add(self):
-        self.parent().add_project(
-            Project.model_validate(
-                {
-                    "name": self.project_name_textbox.text(),
-                    "source": {
-                        "type": self.source_type,
-                        "value": self.source_value,
-                    },
-                    "build": {
-                        "target": self.build_target_combobox.currentText(),
-                        "path": self.build_path_textbox.text(),
-                    },
-                }
-            )
-        )
-        self.close()
 
     def cancel(self):
         self.close()
 
 
-class NewLocalProjectDialog(NewProjectDialog):
+class AddNewProjectDialog(ManageProjectDialog):
+    def __init__(self, parent):
+        super().__init__(parent, "Add new project", "Add")
+        self.button_box.accepted.connect(self.add)
+
+    def add(self):
+        self.parent().add_project(self.generate_project())
+        self.close()
+
+
+class EditProjectDialog(ManageProjectDialog):
+    def __init__(self, parent, project_index: int, project: Project):
+        super().__init__(parent, f"Update project {project.name}", "Edit")
+
+        self.project_name_textbox.setText(project.name)
+        self.set_source_value(project.source.value)
+        self.build_target_combobox.setCurrentText(project.build.target)
+        self.build_path_textbox.setText(project.build.path)
+
+        self.project_index = project_index
+        self.button_box.accepted.connect(self.edit)
+
+    def edit(self):
+        self.parent().update_project(self.project_index, self.generate_project())
+        self.close()
+
+
+class LocalProjectMixin:
     source_type = ProjectSourceType.local
 
     def select_source_layout(self):
@@ -109,12 +129,23 @@ class NewLocalProjectDialog(NewProjectDialog):
         select_project_path_layout.addWidget(self.select_project_path_button)
         return select_project_path_layout
 
+    def select_project_path(self):
+        project_path = Path(
+            QFileDialog.getExistingDirectory(self, "Select project path")
+        )
+        self.project_path_textbox.setText(str(project_path))
+        if self.project_name_textbox.text() == "":
+            self.project_name_textbox.setText(project_path.name)
+
     @property
     def source_value(self):
         return self.project_path_textbox.text()
 
+    def set_source_value(self, value: str):
+        self.project_path_textbox.setText(value)
 
-class NewGitProjectDialog(NewProjectDialog):
+
+class GitProjectMixin:
     source_type = ProjectSourceType.git
 
     def select_source_layout(self):
@@ -131,3 +162,22 @@ class NewGitProjectDialog(NewProjectDialog):
     @property
     def source_value(self):
         return self.project_repository_textbox.text()
+
+    def set_source_value(self, value: str):
+        self.project_repository_textbox.setText(value)
+
+
+class AddNewLocalProjectDialog(LocalProjectMixin, AddNewProjectDialog):
+    pass
+
+
+class EditLocalProjectDialog(LocalProjectMixin, EditProjectDialog):
+    pass
+
+
+class AddNewGitProjectDialog(GitProjectMixin, AddNewProjectDialog):
+    pass
+
+
+class EditGitProjectDialog(GitProjectMixin, EditProjectDialog):
+    pass

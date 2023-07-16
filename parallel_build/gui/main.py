@@ -15,10 +15,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from parallel_build.config import Config, Project
+from parallel_build.config import Config, Project, ProjectSourceType
 from parallel_build.gui.new_project_dialog import (
-    NewGitProjectDialog,
-    NewLocalProjectDialog,
+    AddNewGitProjectDialog,
+    AddNewLocalProjectDialog,
+    EditGitProjectDialog,
+    EditLocalProjectDialog,
 )
 from parallel_build.main import build
 
@@ -39,6 +41,7 @@ class BuildWindow(QWidget):
         self.remove_project_button = QPushButton("Remove...")
         self.remove_project_button.pressed.connect(self.remove_project)
         self.edit_project_button = QPushButton("Edit...")
+        self.edit_project_button.pressed.connect(self.open_edit_project_dialog)
         projects_buttons_layout = QHBoxLayout()
         projects_buttons_layout.addWidget(self.add_project_button)
         projects_buttons_layout.addWidget(self.remove_project_button)
@@ -101,9 +104,9 @@ class BuildWindow(QWidget):
         if ok:
             match choice:
                 case "Local folder":
-                    NewLocalProjectDialog(self).exec()
+                    AddNewLocalProjectDialog(self).exec()
                 case "Git repository":
-                    NewGitProjectDialog(self).exec()
+                    AddNewGitProjectDialog(self).exec()
 
     def add_project(self, project: Project):
         self.config.projects.append(project)
@@ -113,23 +116,34 @@ class BuildWindow(QWidget):
         print(f"Successfully added {project.name}")
 
     def remove_project(self):
-        project_name = self.projects_combobox.currentText()
+        project_to_remove = self.config.projects[self.projects_combobox.currentIndex()]
         reply = QMessageBox.question(
             self,
             "Remove project",
-            f"Do you really want to remove {project_name}?",
+            f"Do you really want to remove {project_to_remove.name}?",
             QMessageBox.Yes | QMessageBox.No,
         )
         if reply == QMessageBox.Yes:
-            project_to_remove = [
-                project
-                for project in self.config.projects
-                if project.name == project_name
-            ][0]
             self.config.projects.remove(project_to_remove)
             self.config.save()
             self.update_from_config()
             print(f"Successfully removed {project_to_remove.name}")
+
+    def open_edit_project_dialog(self):
+        project_index = self.projects_combobox.currentIndex()
+        project_to_update = self.config.projects[project_index]
+        match project_to_update.source.type:
+            case ProjectSourceType.local:
+                EditLocalProjectDialog(self, project_index, project_to_update).exec()
+            case ProjectSourceType.git:
+                EditGitProjectDialog(self, project_index, project_to_update).exec()
+
+    def update_project(self, project_to_update_index: int, updated_project: Project):
+        self.config.projects[project_to_update_index] = updated_project
+        self.config.save()
+        self.update_from_config()
+        self.projects_combobox.setCurrentIndex(project_to_update_index)
+        print(f"Successfully updated {updated_project.name}")
 
 
 class BuildSignals(QObject):
