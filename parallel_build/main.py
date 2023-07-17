@@ -16,58 +16,62 @@ def play_notification():
 
 
 class BuildProcess:
-    def __init__(self, project_name: str, on_build_end=None):
+    def __init__(self, project_name: str, on_build_end=None, output_function=print):
         config = Config.load()
         project = get_project(config, project_name)
         if project is None:
             raise Exception(f"Project '{project_name}' not found")
         self.project = project
         self.git_polling_interval = config.git_polling_interval
-        self.builder: Builder = None
-        self.should_stop = False
+        self.stoppable_step = None
+        self.interrupt = False
         self.on_build_end = on_build_end
+        self.output_function = output_function
 
     def start(self, continuous: bool):
-        self.should_stop = False
+        self.interrupt = False
         with Source(
             self.project.name,
             self.project.source.type,
             self.project.source.value,
+            self.output_function,
             git_polling_interval=self.git_polling_interval,
         ) as source:
-            while not self.should_stop:
+            self.stoppable_step = source
+            while not self.interrupt:
                 with source.temporary_project() as temp_project_path:
-                    if self.should_stop:
+                    if self.interrupt:
                         break
                     yield f"\n== Starting new build of {self.project.name} in {temp_project_path}..."
-                    self.builder = Builder(
+                    builder = Builder(
                         project_path=temp_project_path,
                         build_target=self.project.build.target,
                         build_path=self.project.build.path,
                     )
-                    self.builder.start()
+                    self.stoppable_step = builder
+                    builder.start()
                     observer = UnityRecentlyUsedProjectsObserver(temp_project_path)
-                    for line in self.builder.output_lines:
+                    for line in builder.output_lines:
                         observer.find_and_remove()
                         yield line
-                    yield ""
-                    return_value = self.builder.return_value
+                    return_value = builder.return_value
                     if return_value == 0:
                         yield "Success!"
                         play_notification()
                     else:
                         yield f"Error ({return_value})"
-                        yield self.builder.error_message
+                        yield builder.error_message
                         play_notification()
                         break
                     for build_action in self.project.post_build:
-                        yield from execute_action(build_action, self.builder.build_path)
+                        if not self.interrupt:
+                            yield from execute_action(build_action, builder.build_path)
                 if not continuous:
                     break
         if self.on_build_end:
             self.on_build_end()
 
     def stop(self):
-        self.should_stop = True
-        if self.builder:
-            self.builder.stop()
+        self.interrupt = True
+        if self.stoppable_step:
+            self.stoppable_step.stop()

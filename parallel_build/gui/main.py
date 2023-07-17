@@ -178,7 +178,9 @@ class BuildThread(QThread):
 
     def run(self):
         self.build_process = BuildProcess(
-            project_name=self.project_name, on_build_end=self.signals.build_end.emit
+            project_name=self.project_name,
+            on_build_end=self.signals.build_end.emit,
+            output_function=self.signals.build_progress.emit,
         )
         for output in self.build_process.start(continuous=self.continuous):
             self.signals.build_progress.emit(output)
