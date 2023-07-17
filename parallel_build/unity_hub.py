@@ -29,7 +29,7 @@ class WindowsUnityRecentlyUsedProjects:
                     break
         return recently_used_projects
 
-    def check(self, project_path: Path):
+    def find(self, project_path: Path):
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self.REGISTRY_PATH) as unity_key:
             for i in range(1024):
                 try:
@@ -67,7 +67,7 @@ class MacOSUnityRecentlyUsedProjects:
                     recently_used_projects.append(value)
         return recently_used_projects
 
-    def check(self, project_path: Path):
+    def find(self, project_path: Path):
         with open(self.PLIST_PATH, "rb") as plist_file:
             unity_plist = plistlib.load(plist_file)
             base_key = None
@@ -104,7 +104,19 @@ class UnityRecentlyUsedProjects:
                 return None
 
     def get(self):
+        if not self.handler:
+            return
         return self.handler.get()
+
+    def find(self, project_path: Path):
+        if not self.handler:
+            return
+        self.handler.find(project_path)
+
+    def delete(self, value):
+        if not self.handler:
+            return
+        self.handler.delete(value)
 
 
 class UnityRecentlyUsedProjectsObserver:
@@ -112,25 +124,14 @@ class UnityRecentlyUsedProjectsObserver:
     start the build, we will check when it does and remove it."""
 
     def __init__(self, temp_project_path: Path):
-        self.handler = self._get_handler()
+        self.handler = UnityRecentlyUsedProjects()
         self.temp_project_path = temp_project_path
         self.key_found = False
 
-    def _get_handler(self):
-        match OperatingSystem.current:
-            case OperatingSystem.windows:
-                return WindowsUnityRecentlyUsedProjects()
-            case OperatingSystem.macos:
-                return MacOSUnityRecentlyUsedProjects()
-            case _:
-                return None
-
-    def check_and_remove(self):
-        if not self.handler:
-            return
+    def find_and_remove(self):
         if self.key_found:
             return
-        key = self.handler.check(self.temp_project_path)
+        key = self.handler.find(self.temp_project_path)
         if key:
             self.handler.delete(key)
             self.key_found = True

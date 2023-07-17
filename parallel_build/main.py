@@ -37,7 +37,7 @@ def build(continuous: bool, project_name: str):
                 builder.start()
                 observer = UnityRecentlyUsedProjectsObserver(temp_project_path)
                 for line in builder.output_lines:
-                    observer.check_and_remove()
+                    observer.find_and_remove()
                     yield line
                 yield ""
                 return_value = builder.return_value
