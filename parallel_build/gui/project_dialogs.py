@@ -76,6 +76,7 @@ class ManageProjectDialog(QDialog):
         self.copy_path_textbox.setReadOnly(True)
         choose_button = QPushButton("Choose...")
         choose_button.clicked.connect(self.select_copy_path)
+        self.has_chosen_copy_path = False
         select_path_layout.addWidget(self.copy_path_textbox)
         select_path_layout.addWidget(choose_button)
         self.copy_groupbox.setLayout(select_path_layout)
@@ -90,11 +91,15 @@ class ManageProjectDialog(QDialog):
 
         self.on_init_end()
 
+    def on_build_path_edit(self):
+        pass
+
     def select_copy_path(self):
-        project_path = Path(
-            QFileDialog.getExistingDirectory(self, "Select destination path")
-        )
-        self.copy_path_textbox.setText(str(project_path))
+        project_path = QFileDialog.getExistingDirectory(self, "Select destination path")
+        if project_path == "":
+            return
+        self.copy_path_textbox.setText(project_path)
+        self.has_chosen_copy_path = True
 
     def generate_project(self):
         post_build_actions = []
@@ -182,14 +187,15 @@ class LocalProjectMixin:
         return layout
 
     def on_init_end(self):
-        self.has_text_been_edited = False
+        self.has_project_path_been_edited = False
         self.change_project_path()
         self.project_name_textbox.editingFinished.connect(
             self.on_project_name_textbox_edit
         )
+        self.build_path_textbox.editingFinished.connect(self.update_copy_groupbox)
 
     def on_project_name_textbox_edit(self):
-        self.has_text_been_edited = True
+        self.has_project_path_been_edited = True
 
     @property
     def is_other_selected(self):
@@ -202,20 +208,36 @@ class LocalProjectMixin:
         self.project_path_textbox.setEnabled(self.is_other_selected)
         self.select_project_path_button.setEnabled(self.is_other_selected)
         if not self.is_other_selected:
-            self.update_project_name_text(
-                Path(self.recently_used_combobox.currentText()).name
-            )
+            self.on_project_path_update()
 
     def select_project_path(self):
-        project_path = Path(
-            QFileDialog.getExistingDirectory(self, "Select project path")
-        )
-        self.project_path_textbox.setText(str(project_path))
-        self.update_project_name_text(project_path.name)
+        project_path = QFileDialog.getExistingDirectory(self, "Select project path")
+        if project_path == "":
+            return
+        self.project_path_textbox.setText(project_path)
+        self.on_project_path_update()
 
-    def update_project_name_text(self, new_project_name):
-        if not self.has_text_been_edited or self.project_name_textbox.text() == "":
-            self.project_name_textbox.setText(new_project_name)
+    @property
+    def selected_project_path(self):
+        if self.is_other_selected:
+            return Path(self.project_path_textbox.text())
+        return Path(self.recently_used_combobox.currentText())
+
+    def on_project_path_update(self):
+        if (
+            not self.has_project_path_been_edited
+            or self.project_name_textbox.text() == ""
+        ):
+            self.project_name_textbox.setText(self.selected_project_path.name)
+        self.update_copy_groupbox()
+
+    def update_copy_groupbox(self):
+        if self.copy_groupbox.isChecked() and (
+            not self.has_chosen_copy_path or self.copy_path_textbox.text() == ""
+        ):
+            self.copy_path_textbox.setText(
+                str(self.selected_project_path / self.build_path_textbox.text())
+            )
 
     @property
     def source_value(self):
@@ -224,7 +246,7 @@ class LocalProjectMixin:
         return self.recently_used_combobox.currentText()
 
     def set_source_value(self, value: str):
-        self.has_text_been_edited = True
+        self.has_project_path_been_edited = True
         if value in self.recently_used_projects:
             self.recently_used_combobox.setCurrentIndex(
                 self.recently_used_projects.index(value)
@@ -263,7 +285,10 @@ class AddNewLocalProjectDialog(LocalProjectMixin, AddNewProjectDialog):
 
 
 class EditLocalProjectDialog(LocalProjectMixin, EditProjectDialog):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.has_project_path_been_edited = True
+        self.has_chosen_copy_path = True
 
 
 class AddNewGitProjectDialog(GitProjectMixin, AddNewProjectDialog):
