@@ -112,14 +112,19 @@ class Builder:
                 get_build_args(project_path, build_target, build_path),
             ]
         )
-        self.build_process = None
+        self.build_process: subprocess.Popen = None
         self.error_message = ""
 
     def start(self):
         self.build_process = subprocess.Popen(
-            self.command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         self.error_message = ""
+
+    def stop(self):
+        if not self.build_process:
+            raise Exception("Build command not started")
+        self.build_process.terminate()
 
     @property
     def output_lines(self):

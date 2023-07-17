@@ -1,7 +1,7 @@
 import sys
 
 from PySide6.QtCore import QObject, QThread, Signal, Slot
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QCloseEvent, QFont
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -22,7 +22,7 @@ from parallel_build.gui.project_dialogs import (
     EditGitProjectDialog,
     EditLocalProjectDialog,
 )
-from parallel_build.main import build
+from parallel_build.main import BuildProcess
 
 
 class BuildWindow(QWidget):
@@ -53,22 +53,26 @@ class BuildWindow(QWidget):
         self.build_button = QPushButton("Build")
         self.build_button.pressed.connect(self.start_build_process)
 
-        self.text_area = QPlainTextEdit()
-        self.text_area.setReadOnly(True)
-        self.text_area.setFont(QFont("Lucida Console"))
+        self.output_text_area = QPlainTextEdit()
+        self.output_text_area.setReadOnly(True)
+        self.output_text_area.setFont(QFont("Lucida Console"))
 
         layout = QVBoxLayout()
         layout.addWidget(self.projects_combobox)
         layout.addLayout(projects_buttons_layout)
         layout.addWidget(self.continuous_checkbox)
         layout.addWidget(self.build_button)
-        layout.addWidget(self.text_area)
+        layout.addWidget(self.output_text_area)
 
         self.setLayout(layout)
 
         self.thread = BuildThread(self)
-        self.thread.started.connect(self.disable_button)
-        self.thread.finished.connect(self.enable_button)
+        self.thread.started.connect(self.on_build_start)
+        self.thread.finished.connect(self.on_build_end)
+
+    def closeEvent(self, event: QCloseEvent):
+        self.thread.stop()
+        self.thread.quit()
 
     def update_from_config(self):
         self.projects_combobox.clear()
@@ -76,22 +80,31 @@ class BuildWindow(QWidget):
             [project.name for project in self.config.projects]
         )
 
-    def enable_button(self):
-        self.build_button.setDisabled(False)
+    def on_build_start(self):
+        self.output_text_area.clear()
+        self.build_button.setEnabled(True)
+        self.build_button.setText("Stop")
+        self.build_button.pressed.disconnect()
+        self.build_button.pressed.connect(self.stop_build_process)
 
-    def disable_button(self):
-        self.build_button.setDisabled(True)
+    def on_build_end(self):
+        self.build_button.setEnabled(True)
+        self.build_button.setText("Build")
+        self.build_button.pressed.disconnect()
+        self.build_button.pressed.connect(self.start_build_process)
 
     @Slot(str)
     def update_text_area(self, message):
-        self.text_area.appendPlainText(message)
+        self.output_text_area.appendPlainText(message)
 
     def start_build_process(self):
-        self.disable_button()
         self.thread.configure(
             self.continuous_checkbox.isChecked(), self.projects_combobox.currentText()
         )
         self.thread.start()
+
+    def stop_build_process(self):
+        self.thread.stop()
 
     def open_new_project_dialog(self):
         choice, ok = QInputDialog.getItem(
@@ -148,6 +161,7 @@ class BuildWindow(QWidget):
 
 class BuildSignals(QObject):
     build_progress = Signal(str)
+    build_end = Signal()
 
 
 class BuildThread(QThread):
@@ -155,14 +169,22 @@ class BuildThread(QThread):
         QThread.__init__(self, parent)
         self.signals = BuildSignals()
         self.signals.build_progress.connect(parent.update_text_area)
+        self.signals.build_end.connect(parent.on_build_end)
+        self.build_process = None
 
     def configure(self, continuous, project_name):
         self.continuous = continuous
         self.project_name = project_name
 
     def run(self):
-        for output in build(self.continuous, self.project_name):
+        self.build_process = BuildProcess(
+            project_name=self.project_name, on_build_end=self.signals.build_end.emit
+        )
+        for output in self.build_process.start(continuous=self.continuous):
             self.signals.build_progress.emit(output)
+
+    def stop(self):
+        self.build_process.stop()
 
 
 def show_gui():
