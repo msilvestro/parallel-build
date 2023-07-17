@@ -81,10 +81,26 @@ class ManageProjectDialog(QDialog):
         select_path_layout.addWidget(choose_button)
         self.copy_groupbox.setLayout(select_path_layout)
 
+        self.itch_groupbox = QGroupBox("Publish to itch.io")
+        self.itch_groupbox.setCheckable(True)
+        self.itch_groupbox.setChecked(False)
+        itch_groupbox_layout = QFormLayout()
+        self.itch_user_textbox = QLineEdit()
+        self.itch_user_textbox.setPlaceholderText("gfreeman")
+        itch_groupbox_layout.addRow(QLabel("Itch user:"), self.itch_user_textbox)
+        self.itch_game_textbox = QLineEdit()
+        self.itch_game_textbox.setPlaceholderText("black-mesa")
+        itch_groupbox_layout.addRow(QLabel("Itch game:"), self.itch_game_textbox)
+        self.itch_channel_textbox = QLineEdit()
+        self.itch_channel_textbox.setPlaceholderText("webgl")
+        itch_groupbox_layout.addRow(QLabel("Itch channel:"), self.itch_channel_textbox)
+        self.itch_groupbox.setLayout(itch_groupbox_layout)
+
         layout = QVBoxLayout()
         layout.addLayout(select_source_layout)
         layout.addLayout(main_form)
         layout.addWidget(self.copy_groupbox)
+        layout.addWidget(self.itch_groupbox)
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
@@ -106,6 +122,17 @@ class ManageProjectDialog(QDialog):
         if self.copy_groupbox.isChecked():
             post_build_actions.append(
                 {"action": "copy", "params": {"target": self.copy_path_textbox.text()}}
+            )
+        if self.itch_groupbox.isChecked():
+            post_build_actions.append(
+                {
+                    "action": "publish-itch",
+                    "params": {
+                        "itch_user": self.itch_user_textbox.text(),
+                        "itch_game": self.itch_game_textbox.text(),
+                        "itch_channel": self.itch_channel_textbox.text(),
+                    },
+                }
             )
         return Project.model_validate(
             {
@@ -146,10 +173,16 @@ class EditProjectDialog(ManageProjectDialog):
         self.build_path_textbox.setText(project.build.path)
 
         self.copy_groupbox.setChecked(False)
+        self.itch_groupbox.setChecked(False)
         for action in project.post_build:
             if action.action == "copy":
                 self.copy_groupbox.setChecked(True)
                 self.copy_path_textbox.setText(action.params["target"])
+            elif action.action == "publish-itch":
+                self.itch_groupbox.setChecked(True)
+                self.itch_user_textbox.setText(action.params["itch_user"])
+                self.itch_game_textbox.setText(action.params["itch_game"])
+                self.itch_channel_textbox.setText(action.params["itch_channel"])
 
         self.project_index = project_index
         self.button_box.accepted.connect(self.edit)
