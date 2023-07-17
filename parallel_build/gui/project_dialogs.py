@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFileDialog,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -66,16 +67,41 @@ class ManageProjectDialog(QDialog):
         self.button_box.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
         self.button_box.rejected.connect(self.cancel)
 
+        self.copy_groupbox = QGroupBox("Copy build to destination folder")
+        self.copy_groupbox.setCheckable(True)
+        self.copy_groupbox.setChecked(True)
+        select_path_layout = QHBoxLayout()
+        self.copy_path_textbox = QLineEdit()
+        self.copy_path_textbox.setPlaceholderText("Select destination folder...")
+        self.copy_path_textbox.setReadOnly(True)
+        choose_button = QPushButton("Choose...")
+        choose_button.clicked.connect(self.select_copy_path)
+        select_path_layout.addWidget(self.copy_path_textbox)
+        select_path_layout.addWidget(choose_button)
+        self.copy_groupbox.setLayout(select_path_layout)
+
         layout = QVBoxLayout()
         layout.addLayout(select_source_layout)
         layout.addLayout(main_form)
+        layout.addWidget(self.copy_groupbox)
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
 
         self.on_init_end()
 
+    def select_copy_path(self):
+        project_path = Path(
+            QFileDialog.getExistingDirectory(self, "Select destination path")
+        )
+        self.copy_path_textbox.setText(str(project_path))
+
     def generate_project(self):
+        post_build_actions = []
+        if self.copy_groupbox.isChecked():
+            post_build_actions.append(
+                {"action": "copy", "params": {"target": self.copy_path_textbox.text()}}
+            )
         return Project.model_validate(
             {
                 "name": self.project_name_textbox.text(),
@@ -87,6 +113,7 @@ class ManageProjectDialog(QDialog):
                     "target": self.build_target_combobox.currentText(),
                     "path": self.build_path_textbox.text(),
                 },
+                "post_build": post_build_actions,
             }
         )
 
@@ -112,6 +139,12 @@ class EditProjectDialog(ManageProjectDialog):
         self.set_source_value(project.source.value)
         self.build_target_combobox.setCurrentText(project.build.target)
         self.build_path_textbox.setText(project.build.path)
+
+        self.copy_groupbox.setChecked(False)
+        for action in project.post_build:
+            if action.action == "copy":
+                self.copy_groupbox.setChecked(True)
+                self.copy_path_textbox.setText(action.params["target"])
 
         self.project_index = project_index
         self.button_box.accepted.connect(self.edit)
