@@ -15,14 +15,28 @@ class WindowsUnityRecentlyUsedProjects:
         if OperatingSystem.current != OperatingSystem.windows:
             raise Exception("This class works only on Windows")
 
+    def get(self):
+        recently_used_projects = []
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self.REGISTRY_PATH) as unity_key:
+            for i in range(1024):
+                try:
+                    value_name, value_data, _ = winreg.EnumValue(unity_key, i)
+                    if value_name.startswith("RecentlyUsedProjectPaths"):
+                        recently_used_projects.append(
+                            str(Path(value_data[:-1].decode("utf-8")))
+                        )
+                except WindowsError:
+                    break
+        return recently_used_projects
+
     def check(self, project_path: Path):
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, self.REGISTRY_PATH) as unity_key:
             for i in range(1024):
                 try:
                     value_name, value_data, _ = winreg.EnumValue(unity_key, i)
                     if value_name.startswith("RecentlyUsedProjectPaths"):
-                        project_path = Path(value_data[:-1].decode("utf-8"))
-                        if project_path == project_path:
+                        current_project_path = Path(value_data[:-1].decode("utf-8"))
+                        if current_project_path == project_path:
                             return value_name
                 except WindowsError:
                     break
@@ -43,6 +57,15 @@ class MacOSUnityRecentlyUsedProjects:
     def __init__(self):
         if OperatingSystem.current != OperatingSystem.macos:
             raise Exception("This class works only on MacOS")
+
+    def get(self):
+        recently_used_projects = []
+        with open(self.PLIST_PATH, "rb") as plist_file:
+            unity_plist = plistlib.load(plist_file)
+            for key, value in unity_plist.items():
+                if key.startswith("RecentlyUsedProjectPaths"):
+                    recently_used_projects.append(value)
+        return recently_used_projects
 
     def check(self, project_path: Path):
         with open(self.PLIST_PATH, "rb") as plist_file:
@@ -65,6 +88,23 @@ class MacOSUnityRecentlyUsedProjects:
         del unity_plist[private_key]
         with open(self.PLIST_PATH, "wb") as plist_file:
             plistlib.dump(unity_plist, plist_file)
+
+
+class UnityRecentlyUsedProjects:
+    def __init__(self):
+        self.handler = self._get_handler()
+
+    def _get_handler(self):
+        match OperatingSystem.current:
+            case OperatingSystem.windows:
+                return WindowsUnityRecentlyUsedProjects()
+            case OperatingSystem.macos:
+                return MacOSUnityRecentlyUsedProjects()
+            case _:
+                return None
+
+    def get(self):
+        return self.handler.get()
 
 
 class UnityRecentlyUsedProjectsObserver:

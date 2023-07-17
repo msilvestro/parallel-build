@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from parallel_build.config import BuildTarget, Project, ProjectSourceType
+from parallel_build.unity_hub import UnityRecentlyUsedProjects
 
 
 class ManageProjectDialog(QDialog):
@@ -28,6 +29,9 @@ class ManageProjectDialog(QDialog):
 
     def set_source_value(self, value: str):
         raise NotImplementedError
+
+    def on_init_end(self):
+        pass
 
     def __init__(self, parent, window_title: str, accept_button_text: str):
         super().__init__(parent)
@@ -68,6 +72,8 @@ class ManageProjectDialog(QDialog):
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
+
+        self.on_init_end()
 
     def generate_project(self):
         return Project.model_validate(
@@ -119,6 +125,14 @@ class LocalProjectMixin:
     source_type = ProjectSourceType.local
 
     def select_source_layout(self):
+        self.recently_used_projects = UnityRecentlyUsedProjects().get()
+        self.recently_used_combobox = QComboBox()
+        self.recently_used_combobox.addItems(self.recently_used_projects)
+        self.recently_used_combobox.addItem("Other path...")
+        self.recently_used_combobox.currentIndexChanged.connect(
+            self.change_project_path
+        )
+
         select_project_path_layout = QHBoxLayout()
         self.project_path_textbox = QLineEdit()
         self.project_path_textbox.setPlaceholderText("Select project path...")
@@ -127,21 +141,65 @@ class LocalProjectMixin:
         self.select_project_path_button.clicked.connect(self.select_project_path)
         select_project_path_layout.addWidget(self.project_path_textbox)
         select_project_path_layout.addWidget(self.select_project_path_button)
-        return select_project_path_layout
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.recently_used_combobox)
+        layout.addLayout(select_project_path_layout)
+
+        return layout
+
+    def on_init_end(self):
+        self.has_text_been_edited = False
+        self.change_project_path()
+        self.project_name_textbox.editingFinished.connect(
+            self.on_project_name_textbox_edit
+        )
+
+    def on_project_name_textbox_edit(self):
+        self.has_text_been_edited = True
+
+    @property
+    def is_other_selected(self):
+        return (
+            self.recently_used_combobox.currentIndex()
+            == self.recently_used_combobox.count() - 1
+        )
+
+    def change_project_path(self):
+        self.project_path_textbox.setEnabled(self.is_other_selected)
+        self.select_project_path_button.setEnabled(self.is_other_selected)
+        if not self.is_other_selected:
+            self.update_project_name_text(
+                Path(self.recently_used_combobox.currentText()).name
+            )
 
     def select_project_path(self):
         project_path = Path(
             QFileDialog.getExistingDirectory(self, "Select project path")
         )
         self.project_path_textbox.setText(str(project_path))
-        if self.project_name_textbox.text() == "":
-            self.project_name_textbox.setText(project_path.name)
+        self.update_project_name_text(project_path.name)
+
+    def update_project_name_text(self, new_project_name):
+        if not self.has_text_been_edited or self.project_name_textbox.text() == "":
+            self.project_name_textbox.setText(new_project_name)
 
     @property
     def source_value(self):
-        return self.project_path_textbox.text()
+        if self.is_other_selected:
+            return self.project_path_textbox.text()
+        return self.recently_used_combobox.currentText()
 
     def set_source_value(self, value: str):
+        self.has_text_been_edited = True
+        if value in self.recently_used_projects:
+            self.recently_used_combobox.setCurrentIndex(
+                self.recently_used_projects.index(value)
+            )
+            return
+        self.recently_used_combobox.setCurrentIndex(
+            self.recently_used_combobox.count() - 1
+        )
         self.project_path_textbox.setText(value)
 
 
