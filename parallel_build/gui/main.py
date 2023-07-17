@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from parallel_build.config import Config, Project, ProjectSourceType
-from parallel_build.gui.new_project_dialog import (
+from parallel_build.gui.project_dialogs import (
     AddNewGitProjectDialog,
     AddNewLocalProjectDialog,
     EditGitProjectDialog,
