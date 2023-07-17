@@ -15,9 +15,6 @@ def play_notification():
     print("\a")
 
 
-builder: Builder = None
-
-
 class BuildProcess:
     def __init__(self, project_name: str, on_build_end=None):
         config = Config.load()

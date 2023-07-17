@@ -3,8 +3,8 @@ import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal
 
+from parallel_build.config import ProjectSourceType
 from parallel_build.utils import run_subprocess
 
 
@@ -12,11 +12,14 @@ class Source:
     def __init__(
         self,
         project_name: str,
-        source_type: Literal["local", "git"],
+        source_type: ProjectSourceType,
         source_value: str,
         **kwargs: dict,
     ):
-        source_class = {"local": LocalSource, "git": GitSource}[source_type]
+        source_class = {
+            ProjectSourceType.local: LocalSource,
+            ProjectSourceType.git: GitSource,
+        }[source_type]
         self.source: LocalSource | GitSource = source_class(
             project_name, source_value, **kwargs
         )
