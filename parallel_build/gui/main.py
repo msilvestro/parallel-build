@@ -54,7 +54,7 @@ class BuildWindow(QWidget):
 
         self.output_text_area = QPlainTextEdit()
         self.output_text_area.setReadOnly(True)
-        self.output_text_area.setFont(QFont("Lucida Console"))
+        self.output_text_area.setFont(QFont("Courier New"))
 
         layout = QVBoxLayout()
         layout.addWidget(self.projects_combobox)
