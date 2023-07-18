@@ -59,6 +59,10 @@ class LocalSource:
         self.output_function = output_function
         self.interrupt = False
 
+        output_function(
+            f"== Pre build: copying {project_name} files to temporary project"
+        )
+
     def cleanup(self):
         ...
 
@@ -96,6 +100,7 @@ class GitSource:
         self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.temp_project_path = Path(self.temp_dir.name) / project_name
         self.temp_project_path.mkdir()
+        output_function(f"== Pre build: cloning {project_name} to temporary directory")
         # strange: it seems like part of the output of git clone is sent to stderr
         run_subprocess(["git", "clone", git_repository, self.temp_project_path])
         self.build_count = 0

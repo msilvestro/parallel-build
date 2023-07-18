@@ -1,6 +1,6 @@
 from parallel_build.build import Builder
 from parallel_build.config import Config
-from parallel_build.post_build import execute_action
+from parallel_build.post_build import get_post_build_action
 from parallel_build.source import Source
 from parallel_build.unity_hub import UnityRecentlyUsedProjectsObserver
 
@@ -65,7 +65,11 @@ class BuildProcess:
                         break
                     for build_action in self.project.post_build:
                         if not self.interrupt:
-                            yield from execute_action(build_action, builder.build_path)
+                            post_build_action = get_post_build_action(
+                                build_action, builder.build_path
+                            )
+                            self.stoppable_step = post_build_action
+                            yield from post_build_action.run()
                 if not continuous:
                     break
         if self.on_build_end:

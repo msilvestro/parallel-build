@@ -1,10 +1,9 @@
-import io
 import platform
-import subprocess
 from pathlib import Path
 
 import yaml
 
+from parallel_build.command import Command
 from parallel_build.utils import OperatingSystem
 
 MAX_LINES = 3108
@@ -102,36 +101,31 @@ class Builder:
             project_version_yaml = yaml.safe_load(f.read())
         editor_version = project_version_yaml["m_EditorVersion"]
 
-        self.command = " ".join(
-            [
-                get_editor_path(editor_version),
-                "-quit",
-                "-batchmode",
-                f'-projectpath "{project_path}"',
-                "-logFile -",
-                get_build_args(project_path, build_target, build_path),
-            ]
+        self.build_command = Command(
+            " ".join(
+                [
+                    get_editor_path(editor_version),
+                    "-quit",
+                    "-batchmode",
+                    f'-projectpath "{project_path}"',
+                    "-logFile -",
+                    get_build_args(project_path, build_target, build_path),
+                ]
+            )
         )
-        self.build_process: subprocess.Popen = None
         self.error_message = ""
 
     def start(self):
-        self.build_process = subprocess.Popen(
-            self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        self.build_command.start()
         self.error_message = ""
 
     def stop(self):
-        if not self.build_process:
-            raise Exception("Build command not started")
-        self.build_process.terminate()
+        self.build_command.stop()
 
     @property
     def output_lines(self):
-        if not self.build_process:
-            raise Exception("Build command not started")
         inside_error_message = False
-        for line in io.TextIOWrapper(self.build_process.stdout, encoding="utf-8"):
+        for line in self.build_command.output_lines:
             line = line.strip()
             if inside_error_message:
                 if line == "":
@@ -144,4 +138,4 @@ class Builder:
 
     @property
     def return_value(self):
-        return self.build_process.wait()
+        return self.build_command.return_value
