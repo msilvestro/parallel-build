@@ -76,7 +76,6 @@ class Config(BaseModel):
 
     def save(self):
         yaml_config = yaml.safe_dump(self.model_dump())
-        print(yaml_config)
         with open(
             CONFIG_PATH,
             "w",

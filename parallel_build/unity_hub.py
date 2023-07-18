@@ -52,13 +52,17 @@ class WindowsUnityRecentlyUsedProjects:
 
 
 class MacOSUnityRecentlyUsedProjects:
-    PLIST_PATH = "/Users/matt/Library/Preferences/com.unity3d.UnityEditor5.x.plist"
+    PLIST_PATH = Path(
+        "/Users/matt/Library/Preferences/com.unity3d.UnityEditor5.x.plist"
+    )
 
     def __init__(self):
         if OperatingSystem.current != OperatingSystem.macos:
             raise Exception("This class works only on MacOS")
 
     def get(self):
+        if not self.PLIST_PATH.exists():
+            return []
         recently_used_projects = []
         with open(self.PLIST_PATH, "rb") as plist_file:
             unity_plist = plistlib.load(plist_file)
@@ -68,6 +72,8 @@ class MacOSUnityRecentlyUsedProjects:
         return recently_used_projects
 
     def find(self, project_path: Path):
+        if not self.PLIST_PATH.exists():
+            return False
         with open(self.PLIST_PATH, "rb") as plist_file:
             unity_plist = plistlib.load(plist_file)
             base_key = None
@@ -81,6 +87,8 @@ class MacOSUnityRecentlyUsedProjects:
             return (base_key, private_key) if base_key and private_key else False
 
     def delete(self, keys: tuple[str, str]):
+        if not self.PLIST_PATH.exists():
+            return
         with open(self.PLIST_PATH, "rb") as plist_file:
             unity_plist = plistlib.load(plist_file)
         base_key, private_key = keys

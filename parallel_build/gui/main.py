@@ -34,7 +34,6 @@ class BuildWindow(QWidget):
         self.config = Config.load()
 
         self.projects_combobox = QComboBox()
-        self.update_from_config()
 
         self.add_project_button = QPushButton("Add...")
         self.add_project_button.pressed.connect(self.open_new_project_dialog)
@@ -66,6 +65,8 @@ class BuildWindow(QWidget):
 
         self.setLayout(layout)
 
+        self.update_from_config()
+
         self.thread = BuildThread(self)
         self.thread.started.connect(self.on_build_start)
         self.thread.finished.connect(self.on_build_end)
@@ -75,10 +76,13 @@ class BuildWindow(QWidget):
         self.thread.quit()
 
     def update_from_config(self):
+        projects = [project.name for project in self.config.projects]
         self.projects_combobox.clear()
-        self.projects_combobox.addItems(
-            [project.name for project in self.config.projects]
-        )
+        self.projects_combobox.addItems(projects)
+
+        projects_empty = len(projects) == 0
+        self.remove_project_button.setEnabled(not projects_empty)
+        self.edit_project_button.setEnabled(not projects_empty)
 
     def on_build_start(self):
         self.output_text_area.clear()
@@ -186,7 +190,8 @@ class BuildThread(QThread):
             self.signals.build_progress.emit(output)
 
     def stop(self):
-        self.build_process.stop()
+        if self.build_process:
+            self.build_process.stop()
 
 
 def show_gui():
