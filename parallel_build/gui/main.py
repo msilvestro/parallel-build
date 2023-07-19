@@ -51,6 +51,12 @@ class BuildWindow(QWidget):
 
         self.build_button = QPushButton("Build")
         self.build_button.pressed.connect(self.start_build_process)
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.pressed.connect(self.stop_build_process)
+        self.stop_button.setEnabled(False)
+        build_buttons_layout = QHBoxLayout()
+        build_buttons_layout.addWidget(self.build_button)
+        build_buttons_layout.addWidget(self.stop_button)
 
         self.output_text_area = QPlainTextEdit()
         self.output_text_area.setReadOnly(True)
@@ -60,7 +66,7 @@ class BuildWindow(QWidget):
         layout.addWidget(self.projects_combobox)
         layout.addLayout(projects_buttons_layout)
         layout.addWidget(self.continuous_checkbox)
-        layout.addWidget(self.build_button)
+        layout.addLayout(build_buttons_layout)
         layout.addWidget(self.output_text_area)
 
         self.setLayout(layout)
@@ -86,16 +92,12 @@ class BuildWindow(QWidget):
 
     def on_build_start(self):
         self.output_text_area.clear()
-        self.build_button.setEnabled(True)
-        self.build_button.setText("Stop")
-        self.build_button.pressed.disconnect()
-        self.build_button.pressed.connect(self.stop_build_process)
+        self.build_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
 
     def on_build_end(self):
         self.build_button.setEnabled(True)
-        self.build_button.setText("Build")
-        self.build_button.pressed.disconnect()
-        self.build_button.pressed.connect(self.start_build_process)
+        self.stop_button.setEnabled(False)
 
     @Slot(str)
     def update_text_area(self, message):

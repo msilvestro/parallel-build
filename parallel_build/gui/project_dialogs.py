@@ -165,7 +165,7 @@ class AddNewProjectDialog(ManageProjectDialog):
 
 class EditProjectDialog(ManageProjectDialog):
     def __init__(self, parent, project_index: int, project: Project):
-        super().__init__(parent, f"Update project {project.name}", "Edit")
+        super().__init__(parent, f"Update project {project.name}", "Save")
 
         self.project_name_textbox.setText(project.name)
         self.set_source_value(project.source.value)
