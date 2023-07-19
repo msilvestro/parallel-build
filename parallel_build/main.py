@@ -16,7 +16,7 @@ def play_notification():
 
 
 class BuildProcess:
-    def __init__(self, project_name: str, on_build_end=None, output_function=print):
+    def __init__(self, project_name: str, on_build_end=None):
         config = Config.load()
         project = get_project(config, project_name)
         if project is None:
@@ -26,7 +26,6 @@ class BuildProcess:
         self.stoppable_step = None
         self.interrupt = False
         self.on_build_end = on_build_end
-        self.output_function = output_function
 
     def start(self, continuous: bool):
         self.interrupt = False
@@ -34,7 +33,6 @@ class BuildProcess:
             self.project.name,
             self.project.source.type,
             self.project.source.value,
-            self.output_function,
             git_polling_interval=self.git_polling_interval,
         ) as source:
             self.stoppable_step = source

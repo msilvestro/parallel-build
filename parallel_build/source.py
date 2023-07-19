@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from parallel_build.config import ProjectSourceType
+from parallel_build.logger import Logger
 from parallel_build.utils import run_subprocess
 
 
@@ -14,7 +15,6 @@ class Source:
         project_name: str,
         source_type: ProjectSourceType,
         source_value: str,
-        output_function=print,
         **kwargs: dict,
     ):
         source_class = {
@@ -22,7 +22,7 @@ class Source:
             ProjectSourceType.git: GitSource,
         }[source_type]
         self.source: LocalSource | GitSource = source_class(
-            project_name, source_value, output_function, **kwargs
+            project_name, source_value, **kwargs
         )
 
     def __enter__(self):
@@ -53,15 +53,12 @@ class Interrupt(Exception):
 
 
 class LocalSource:
-    def __init__(self, project_name: str, project_path: str, output_function, **kwargs):
+    def __init__(self, project_name: str, project_path: str, **kwargs):
         self.project_name = project_name
         self.project_path = Path(project_path)
-        self.output_function = output_function
         self.interrupt = False
 
-        output_function(
-            f"== Pre build: copying {project_name} files to temporary project"
-        )
+        Logger.log(f"== Pre build: copying {project_name} files to temporary project")
 
     def cleanup(self):
         ...
@@ -69,7 +66,7 @@ class LocalSource:
     def interruptable_copy(self, src, dst, *, follow_symlinks=True):
         if self.interrupt:
             raise Interrupt("Interrupting copy operation")
-        self.output_function(f"Copying {src} to {dst}...")
+        Logger.log(f"Copying {src} to {dst}...")
         return shutil.copy2(src, dst, follow_symlinks=True)
 
     @contextmanager
@@ -85,7 +82,7 @@ class LocalSource:
                     ignore=ignore_patterns(self.project_path),
                 )
             except Interrupt:
-                self.output_function("Project files copy stopped.")
+                Logger.log("Project files copy stopped.")
                 pass
             yield temp_project_path
 
@@ -94,18 +91,15 @@ class LocalSource:
 
 
 class GitSource:
-    def __init__(
-        self, project_name: str, git_repository: str, output_function, **kwargs
-    ):
+    def __init__(self, project_name: str, git_repository: str, **kwargs):
         self.temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
         self.temp_project_path = Path(self.temp_dir.name) / project_name
         self.temp_project_path.mkdir()
-        output_function(f"== Pre build: cloning {project_name} to temporary directory")
+        Logger.log(f"== Pre build: cloning {project_name} to temporary directory")
         # strange: it seems like part of the output of git clone is sent to stderr
         run_subprocess(["git", "clone", git_repository, self.temp_project_path])
         self.build_count = 0
         self.git_polling_interval = kwargs.get("git_polling_interval", 30)
-        self.output_function = output_function
         self.interrupt = False
 
     def cleanup(self):
@@ -117,15 +111,13 @@ class GitSource:
             ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
         )
         while self.build_count > 0 and not self.interrupt:
-            self.output_function(
-                run_subprocess(["git", "pull"], cwd=self.temp_project_path)
-            )
+            Logger.log(run_subprocess(["git", "pull"], cwd=self.temp_project_path))
             current_commit = run_subprocess(
                 ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
             )
             if current_commit != previous_commit or self.interrupt:
                 break
-            self.output_function(
+            Logger.log(
                 f"No new changes, waiting {self.git_polling_interval} seconds..."
             )
             for i in range(self.git_polling_interval):

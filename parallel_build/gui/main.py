@@ -22,6 +22,7 @@ from parallel_build.gui.project_dialogs import (
     EditGitProjectDialog,
     EditLocalProjectDialog,
 )
+from parallel_build.logger import Logger
 from parallel_build.main import BuildProcess
 
 
@@ -183,10 +184,10 @@ class BuildThread(QThread):
         self.project_name = project_name
 
     def run(self):
+        Logger.output_function = self.signals.build_progress.emit
         self.build_process = BuildProcess(
             project_name=self.project_name,
             on_build_end=self.signals.build_end.emit,
-            output_function=self.signals.build_progress.emit,
         )
         for output in self.build_process.start(continuous=self.continuous):
             self.signals.build_progress.emit(output)
