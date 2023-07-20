@@ -52,12 +52,13 @@ class BuildProcess:
                         break
 
                     for build_action in self.project.post_build:
-                        if not self.interrupt:
-                            post_build_action = get_post_build_action(
-                                build_action, builder.build_path
-                            )
-                            self.current_build_step = post_build_action
-                            post_build_action.run()
+                        if self.interrupt:
+                            break
+                        post_build_action = get_post_build_action(
+                            build_action, builder.build_path
+                        )
+                        self.current_build_step = post_build_action
+                        post_build_action.run()
                 if not continuous:
                     break
         if self.on_build_end:

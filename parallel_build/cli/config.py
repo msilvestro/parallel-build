@@ -59,8 +59,5 @@ projects:
           itch_game: aperture-science
           itch_channel: win
 git_polling_interval: 20
-notification:
-  enabled: true
-  theme: pokemon
 """.strip()
     print(example_config_str)

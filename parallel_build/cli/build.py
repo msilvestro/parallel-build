@@ -10,6 +10,7 @@ def start_echo(name: str):
 
 def error_echo(error: str):
     click.secho(error, fg="red")
+    click.get_app_dir()
 
 
 @click.command()

@@ -1,3 +1,4 @@
+import os
 import platform
 import subprocess
 from enum import Enum
@@ -33,3 +34,19 @@ class OperatingSystem(Enum):
 
 def run_subprocess(*args, **kwargs) -> str:
     return subprocess.check_output(*args, **kwargs).decode("utf-8").strip()
+
+
+def get_app_dir(app_name: str) -> str:
+    """Returns the config folder for the application.
+
+    Adapted from `click.get_app_dir` to be able to avoid click dependencies for the GUI.
+    """
+    if OperatingSystem.current == OperatingSystem.windows:
+        folder = os.environ.get("APPDATA")
+        if folder is None:
+            folder = os.path.expanduser("~")
+        return os.path.join(folder, app_name)
+    elif OperatingSystem.current == OperatingSystem.macos:
+        return os.path.join(
+            os.path.expanduser("~/Library/Application Support"), app_name
+        )

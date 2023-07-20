@@ -2,11 +2,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
-import click
 import yaml
 from pydantic import BaseModel
 
-CONFIG_PATH = Path(click.get_app_dir("ParallelBuild")) / "config.yaml"
+from parallel_build.utils import get_app_dir
+
+CONFIG_PATH = Path(get_app_dir("ParallelBuild")) / "config.yaml"
 
 
 class ProjectSourceType(str, Enum):

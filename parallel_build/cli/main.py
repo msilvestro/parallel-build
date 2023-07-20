@@ -1,8 +1,8 @@
 import click
 
-from parallel_build.build_cli import build
-from parallel_build.check_cli import check
-from parallel_build.config_cli import config
+from parallel_build.cli.build import build
+from parallel_build.cli.check import check
+from parallel_build.cli.config import config
 
 
 @click.group()
