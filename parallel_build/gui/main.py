@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from parallel_build.build_step import BuildStep
 from parallel_build.config import Config, Project, ProjectSourceType
 from parallel_build.gui.project_dialogs import (
     AddNewGitProjectDialog,
@@ -22,7 +23,6 @@ from parallel_build.gui.project_dialogs import (
     EditGitProjectDialog,
     EditLocalProjectDialog,
 )
-from parallel_build.logger import Logger
 from parallel_build.main import BuildProcess
 
 
@@ -179,18 +179,27 @@ class BuildThread(QThread):
         self.signals.build_end.connect(parent.on_build_end)
         self.build_process = None
 
+        def start_emit(name: str):
+            self.signals.build_progress.emit(f"\n> {name}")
+
+        def end_emit(name: str):
+            self.signals.build_progress.emit("> End")
+
+        BuildStep.start.set(start_emit)
+        BuildStep.message.set(self.signals.build_progress.emit)
+        BuildStep.error.set(self.signals.build_progress.emit)
+        BuildStep.end.set(end_emit)
+
     def configure(self, continuous, project_name):
         self.continuous = continuous
         self.project_name = project_name
 
     def run(self):
-        Logger.output_function = self.signals.build_progress.emit
         self.build_process = BuildProcess(
             project_name=self.project_name,
             on_build_end=self.signals.build_end.emit,
         )
-        for output in self.build_process.start(continuous=self.continuous):
-            self.signals.build_progress.emit(output)
+        self.build_process.run(continuous=self.continuous)
 
     def stop(self):
         if self.build_process:

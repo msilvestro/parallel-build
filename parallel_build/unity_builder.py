@@ -3,13 +3,15 @@ from pathlib import Path
 
 import yaml
 
+from parallel_build.build_step import BuildStep, BuildStepEvent
 from parallel_build.command import Command
+from parallel_build.config import BuildTarget
 from parallel_build.utils import OperatingSystem
 
 MAX_LINES = 3108
 
 
-def get_build_path(project_path: str, build_path: str):
+def get_build_path(project_path: Path, build_path: str):
     build_path = Path(build_path)
     if not build_path.is_absolute():
         return project_path / build_path
@@ -90,8 +92,18 @@ def get_build_args(project_path: Path, build_target, build_path):
     return f'-build{build_target}Player "{build_path}"'
 
 
-class Builder:
-    def __init__(self, project_path, build_target, build_path):
+class UnityBuilder(BuildStep):
+    progress = BuildStepEvent()
+
+    name = "Unity builder"
+
+    def __init__(
+        self,
+        project_name: str,
+        project_path: Path,
+        build_target: BuildTarget,
+        build_path: str,
+    ):
         project_path = Path(project_path)
         self.build_path = get_build_path(project_path, build_path)
 
@@ -113,17 +125,15 @@ class Builder:
                 ]
             )
         )
-        self.error_message = ""
 
-    def start(self):
+        self.message.emit(f"Starting new build of {project_name} in {project_path}...")
+
+    @BuildStep.start_method
+    @BuildStep.end_method
+    def run(self):
         self.build_command.start()
-        self.error_message = ""
+        error_message = ""
 
-    def stop(self):
-        self.build_command.stop()
-
-    @property
-    def output_lines(self):
         inside_error_message = False
         for line in self.build_command.output_lines:
             line = line.strip()
@@ -131,11 +141,21 @@ class Builder:
                 if line == "":
                     inside_error_message = False
                 else:
-                    self.error_message += line + "\n"
+                    error_message += line + "\n"
             if line == "Aborting batchmode due to failure:":
                 inside_error_message = True
-            yield line
+            self.message.emit(line)
+            self.progress.emit()
 
-    @property
-    def return_value(self):
-        return self.build_command.return_value
+        return_value = self.build_command.return_value
+        if return_value == 0:
+            self.message.emit("Success!")
+        else:
+            self.error.emit(f"Error ({return_value})")
+            self.error.emit(self.builder.error_message)
+
+        return return_value
+
+    @BuildStep.end_method
+    def stop(self):
+        self.build_command.stop()
