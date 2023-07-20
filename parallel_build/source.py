@@ -72,7 +72,7 @@ class LocalSource(BuildStep):
                     ignore=ignore_patterns(self.project_path),
                 )
             except Interrupt:
-                self.message.emit("Project files copy stopped")
+                self.message.emit("\nProject files copy stopped")
                 pass
             yield temp_project_path
 

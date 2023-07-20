@@ -6,7 +6,6 @@ from enum import Enum
 class OperatingSystem(Enum):
     windows = "Windows"
     macos = "MacOS"
-    linux = "Linux"
     unkwnow = "Unknown"
 
     @classmethod
@@ -17,10 +16,19 @@ class OperatingSystem(Enum):
                 return cls.windows
             case "Darwin":
                 return cls.macos
-            case "Linux":
-                return cls.linux
             case _:
                 return cls.unkwnow
+
+    @classmethod
+    @property
+    def monospace_font(cls):
+        match cls.current:
+            case cls.windows:
+                return "Lucida Console"
+            case cls.macos:
+                return "Monaco"
+            case _:
+                return "Monaco"
 
 
 def run_subprocess(*args, **kwargs) -> str:

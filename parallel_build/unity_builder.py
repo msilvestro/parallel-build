@@ -152,10 +152,11 @@ class UnityBuilder(BuildStep):
             self.message.emit("Success!")
         else:
             self.error.emit(f"Error ({return_value})")
-            self.error.emit(self.builder.error_message)
+            self.error.emit(error_message)
 
         return return_value
 
     @BuildStep.end_method
     def stop(self):
         self.build_command.stop()
+        self.message.emit("\nUnity build stopped")

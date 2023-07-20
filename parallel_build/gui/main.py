@@ -24,6 +24,7 @@ from parallel_build.gui.project_dialogs import (
     EditLocalProjectDialog,
 )
 from parallel_build.main import BuildProcess
+from parallel_build.utils import OperatingSystem
 
 
 class BuildWindow(QWidget):
@@ -61,7 +62,7 @@ class BuildWindow(QWidget):
 
         self.output_text_area = QPlainTextEdit()
         self.output_text_area.setReadOnly(True)
-        self.output_text_area.setFont(QFont("Courier New"))
+        self.output_text_area.setFont(QFont(OperatingSystem.monospace_font))
 
         layout = QVBoxLayout()
         layout.addWidget(self.projects_combobox)
@@ -180,15 +181,11 @@ class BuildThread(QThread):
         self.build_process = None
 
         def start_emit(name: str):
-            self.signals.build_progress.emit(f"\n> {name}")
-
-        def end_emit(name: str):
-            self.signals.build_progress.emit("> End")
+            self.signals.build_progress.emit(f"\n// {name}")
 
         BuildStep.start.set(start_emit)
         BuildStep.message.set(self.signals.build_progress.emit)
         BuildStep.error.set(self.signals.build_progress.emit)
-        BuildStep.end.set(end_emit)
 
     def configure(self, continuous, project_name):
         self.continuous = continuous
