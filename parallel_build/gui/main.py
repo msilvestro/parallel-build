@@ -1,7 +1,5 @@
 import sys
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QFont
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -9,29 +7,25 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
     QMessageBox,
-    QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
-from parallel_build.build_step import BuildStep
 from parallel_build.config import Config, Project, ProjectSourceType
+from parallel_build.gui.build_dialog import BuildDialog
 from parallel_build.gui.project_dialogs import (
     AddNewGitProjectDialog,
     AddNewLocalProjectDialog,
     EditGitProjectDialog,
     EditLocalProjectDialog,
 )
-from parallel_build.main import BuildProcess
-from parallel_build.utils import OperatingSystem
 
 
-class BuildWindow(QWidget):
+class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Parallel Build")
-        self.resize(300, 300)
 
         self.config = Config.load()
 
@@ -53,35 +47,16 @@ class BuildWindow(QWidget):
 
         self.build_button = QPushButton("Build")
         self.build_button.pressed.connect(self.start_build_process)
-        self.stop_button = QPushButton("Stop")
-        self.stop_button.pressed.connect(self.stop_build_process)
-        self.stop_button.setEnabled(False)
-        build_buttons_layout = QHBoxLayout()
-        build_buttons_layout.addWidget(self.build_button)
-        build_buttons_layout.addWidget(self.stop_button)
-
-        self.output_text_area = QPlainTextEdit()
-        self.output_text_area.setReadOnly(True)
-        self.output_text_area.setFont(QFont(OperatingSystem.monospace_font))
 
         layout = QVBoxLayout()
         layout.addWidget(self.projects_combobox)
         layout.addLayout(projects_buttons_layout)
         layout.addWidget(self.continuous_checkbox)
-        layout.addLayout(build_buttons_layout)
-        layout.addWidget(self.output_text_area)
+        layout.addWidget(self.build_button)
 
         self.setLayout(layout)
 
         self.update_from_config()
-
-        self.thread = BuildThread(self)
-        self.thread.started.connect(self.on_build_start)
-        self.thread.finished.connect(self.on_build_end)
-
-    def closeEvent(self, event: QCloseEvent):
-        self.thread.stop()
-        self.thread.quit()
 
     def update_from_config(self):
         projects = [project.name for project in self.config.projects]
@@ -93,27 +68,12 @@ class BuildWindow(QWidget):
         self.edit_project_button.setEnabled(not projects_empty)
         self.build_button.setEnabled(not projects_empty)
 
-    def on_build_start(self):
-        self.output_text_area.clear()
-        self.build_button.setEnabled(False)
-        self.stop_button.setEnabled(True)
-
-    def on_build_end(self):
-        self.build_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
-
-    @Slot(str)
-    def update_text_area(self, message):
-        self.output_text_area.appendPlainText(message)
-
     def start_build_process(self):
-        self.thread.configure(
+        build_dialog = BuildDialog(self)
+        build_dialog.start_build_process(
             self.continuous_checkbox.isChecked(), self.projects_combobox.currentText()
         )
-        self.thread.start()
-
-    def stop_build_process(self):
-        self.thread.stop()
+        build_dialog.exec()
 
     def open_new_project_dialog(self):
         choice, ok = QInputDialog.getItem(
@@ -168,45 +128,9 @@ class BuildWindow(QWidget):
         print(f"Successfully updated {updated_project.name}")
 
 
-class BuildSignals(QObject):
-    build_progress = Signal(str)
-    build_end = Signal()
-
-
-class BuildThread(QThread):
-    def __init__(self, parent=None):
-        QThread.__init__(self, parent)
-        self.signals = BuildSignals()
-        self.signals.build_progress.connect(parent.update_text_area)
-        self.signals.build_end.connect(parent.on_build_end)
-        self.build_process = None
-
-        def start_emit(name: str):
-            self.signals.build_progress.emit(f"\n// {name}")
-
-        BuildStep.start.set(start_emit)
-        BuildStep.message.set(self.signals.build_progress.emit)
-        BuildStep.error.set(self.signals.build_progress.emit)
-
-    def configure(self, continuous, project_name):
-        self.continuous = continuous
-        self.project_name = project_name
-
-    def run(self):
-        self.build_process = BuildProcess(
-            project_name=self.project_name,
-            on_build_end=self.signals.build_end.emit,
-        )
-        self.build_process.run(continuous=self.continuous)
-
-    def stop(self):
-        if self.build_process:
-            self.build_process.stop()
-
-
 def show_gui():
     app = QApplication(sys.argv)
-    window = BuildWindow()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
 

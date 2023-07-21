@@ -58,16 +58,6 @@ class ManageProjectDialog(QDialog):
         self.build_path_textbox = QLineEdit("Builds/WebGL")
         main_form.addRow(self.build_path_label, self.build_path_textbox)
 
-        self.add_button = QPushButton("Add")
-        self.add_button.setDefault(True)
-        self.cancel_button = QPushButton("Cancel")
-        self.button_box = QDialogButtonBox()
-        self.button_box.addButton(
-            accept_button_text, QDialogButtonBox.ButtonRole.AcceptRole
-        )
-        self.button_box.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
-        self.button_box.rejected.connect(self.cancel)
-
         self.copy_groupbox = QGroupBox("Copy build to destination folder")
         self.copy_groupbox.setCheckable(True)
         self.copy_groupbox.setChecked(True)
@@ -97,6 +87,13 @@ class ManageProjectDialog(QDialog):
         itch_groupbox_layout.addRow(QLabel("Itch channel:"), self.itch_channel_textbox)
         self.itch_groupbox.setLayout(itch_groupbox_layout)
 
+        self.button_box = QDialogButtonBox()
+        self.button_box.addButton(
+            accept_button_text, QDialogButtonBox.ButtonRole.AcceptRole
+        )
+        self.button_box.addButton("Cancel", QDialogButtonBox.ButtonRole.RejectRole)
+        self.button_box.rejected.connect(self.cancel)
+
         layout = QVBoxLayout()
         layout.addLayout(select_source_layout)
         layout.addLayout(main_form)
@@ -107,9 +104,6 @@ class ManageProjectDialog(QDialog):
         self.setLayout(layout)
 
         self.on_init_end()
-
-    def on_build_path_edit(self):
-        pass
 
     def select_copy_path(self):
         project_path = QFileDialog.getExistingDirectory(self, "Select destination path")
