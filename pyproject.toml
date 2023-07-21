@@ -11,6 +11,7 @@ python = ">=3.11,<3.12"
 click = "^8.1.5"
 pyside6-essentials = "^6.5.1.1"
 msgspec = "^0.17.0"
+pyyaml = "^6.0.1"
 
 [tool.poetry.scripts]
 parallelbuild = "parallel_build.cli.main:cli"
