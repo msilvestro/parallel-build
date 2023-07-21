@@ -104,11 +104,13 @@ class UnityBuilder(BuildStep):
         build_target: BuildTarget,
         build_path: str,
     ):
-        project_path = Path(project_path)
+        self.project_name = project_name
+        self.project_path = Path(project_path)
         self.build_path = get_build_path(project_path, build_path)
 
         with open(
-            project_path / "ProjectSettings" / "ProjectVersion.txt", encoding="utf-8"
+            self.project_path / "ProjectSettings" / "ProjectVersion.txt",
+            encoding="utf-8",
         ) as f:
             project_version_yaml = yaml.safe_load(f.read())
         editor_version = project_version_yaml["m_EditorVersion"]
@@ -119,18 +121,19 @@ class UnityBuilder(BuildStep):
                     get_editor_path(editor_version),
                     "-quit",
                     "-batchmode",
-                    f'-projectpath "{project_path}"',
+                    f'-projectpath "{self.project_path}"',
                     "-logFile -",
-                    get_build_args(project_path, build_target, build_path),
+                    get_build_args(self.project_path, build_target, build_path),
                 ]
             )
         )
 
-        self.message.emit(f"Starting new build of {project_name} in {project_path}...")
-
     @BuildStep.start_method
     @BuildStep.end_method
     def run(self):
+        self.message.emit(
+            f"Starting new build of {self.project_name} in {self.project_path}..."
+        )
         self.build_command.start()
         error_message = ""
 
