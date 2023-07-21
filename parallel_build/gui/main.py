@@ -91,6 +91,7 @@ class BuildWindow(QWidget):
         projects_empty = len(projects) == 0
         self.remove_project_button.setEnabled(not projects_empty)
         self.edit_project_button.setEnabled(not projects_empty)
+        self.build_button.setEnabled(not projects_empty)
 
     def on_build_start(self):
         self.output_text_area.clear()

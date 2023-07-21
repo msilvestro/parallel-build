@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import msgspec
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -134,7 +135,7 @@ class ManageProjectDialog(QDialog):
                     },
                 }
             )
-        return Project.model_validate(
+        return msgspec.convert(
             {
                 "name": self.project_name_textbox.text(),
                 "source": {
@@ -146,7 +147,8 @@ class ManageProjectDialog(QDialog):
                     "path": self.build_path_textbox.text(),
                 },
                 "post_build": post_build_actions,
-            }
+            },
+            type=Project,
         )
 
     def cancel(self):

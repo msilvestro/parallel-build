@@ -2,12 +2,16 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
-import yaml
-from pydantic import BaseModel
+import msgspec
+from msgspec import Struct
 
 from parallel_build.utils import get_app_dir
 
 CONFIG_PATH = Path(get_app_dir("ParallelBuild")) / "config.yaml"
+
+
+class Base(Struct, kw_only=True):
+    ...
 
 
 class ProjectSourceType(str, Enum):
@@ -15,12 +19,9 @@ class ProjectSourceType(str, Enum):
     git = "git"
 
 
-class ProjectSource(BaseModel):
+class ProjectSource(Base):
     type: ProjectSourceType
     value: str
-
-    class Config:
-        use_enum_values = True
 
 
 class BuildTarget(str, Enum):
@@ -31,27 +32,24 @@ class BuildTarget(str, Enum):
     webgl = "WebGL"
 
 
-class ProjectBuildConfig(BaseModel):
+class ProjectBuildConfig(Base):
     target: BuildTarget = BuildTarget.webgl
     path: str = "Build/WebGL"
 
-    class Config:
-        use_enum_values = True
 
-
-class ProjectPostBuildAction(BaseModel):
+class ProjectPostBuildAction(Base):
     action: Literal["copy", "publish-itch"]
     params: dict[str, str] | None
 
 
-class Project(BaseModel):
+class Project(Base):
     name: str
     source: ProjectSource
-    build: ProjectBuildConfig = ProjectBuildConfig()
+    build: ProjectBuildConfig
     post_build: list[ProjectPostBuildAction] = []
 
 
-class Config(BaseModel):
+class Config(Base):
     projects: list[Project] = []
     git_polling_interval: int = 30
 
@@ -62,24 +60,21 @@ class Config(BaseModel):
             CONFIG_PATH.touch()
         with open(
             CONFIG_PATH,
-            "r",
-            encoding="utf-8",
+            "rb",
         ) as file:
-            config = yaml.safe_load(file.read())
+            config = file.read()
             if not config:
                 return cls()
-        return cls.model_validate(config)
+            return msgspec.yaml.decode(config, type=cls)
 
     @classmethod
     def loads(cls, config_str: str):
-        config = yaml.safe_load(config_str)
-        return cls.model_validate(config)
+        return msgspec.yaml.decode(config_str)
 
     def save(self):
-        yaml_config = yaml.safe_dump(self.model_dump())
         with open(
             CONFIG_PATH,
-            "w",
-            encoding="utf-8",
+            "wb",
         ) as file:
+            yaml_config = msgspec.yaml.encode(self)
             file.write(yaml_config)
