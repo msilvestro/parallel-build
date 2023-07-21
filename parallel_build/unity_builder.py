@@ -1,7 +1,7 @@
 import platform
 from pathlib import Path
 
-import yaml
+import msgspec
 
 from parallel_build.build_step import BuildStep, BuildStepEvent
 from parallel_build.command import Command
@@ -112,7 +112,7 @@ class UnityBuilder(BuildStep):
             self.project_path / "ProjectSettings" / "ProjectVersion.txt",
             encoding="utf-8",
         ) as f:
-            project_version_yaml = yaml.safe_load(f.read())
+            project_version_yaml = msgspec.yaml.decode(f.read())
         editor_version = project_version_yaml["m_EditorVersion"]
 
         self.build_command = Command(
