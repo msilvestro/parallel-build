@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import msgspec
@@ -134,6 +135,20 @@ class ManageProjectDialog(QDialog):
             self.show_validation_error(
                 f"{self.source_type.pretty_name} cannot be empty"
             )
+            return False
+
+        if self.source_type == ProjectSourceType.local and not validate_unity_project(
+            Path(self.source_value)
+        ):
+            self.show_validation_error(
+                f"{self.source_value} is not a valid Unity project"
+            )
+            return False
+        elif (
+            self.source_type == ProjectSourceType.git
+            and subprocess.run(f"git ls-remote -h {self.source_value}").returncode != 0
+        ):
+            self.show_validation_error(f"{self.source_value} is not a valid repository")
             return False
 
         project_name = self.project_name_textbox.text()
@@ -297,13 +312,6 @@ class LocalProjectMixin:
     def select_project_path(self):
         project_path = QFileDialog.getExistingDirectory(self, "Select project path")
         if project_path == "":
-            return
-        if not validate_unity_project(Path(project_path)):
-            messagebox = QMessageBox()
-            messagebox.setWindowTitle("Invalid project")
-            messagebox.setIcon(QMessageBox.Icon.Warning)
-            messagebox.setText(f"{project_path} is not a valid Unity project")
-            messagebox.exec()
             return
 
         self.project_path_textbox.setText(project_path)
