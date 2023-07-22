@@ -52,6 +52,7 @@ class Project(Base):
 class Config(Base):
     projects: list[Project] = []
     git_polling_interval: int = 30
+    default_project: int = 0
 
     @classmethod
     def load(cls):

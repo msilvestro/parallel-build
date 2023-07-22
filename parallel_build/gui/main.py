@@ -1,5 +1,6 @@
 import sys
 
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -30,6 +31,9 @@ class MainWindow(QWidget):
         self.config = Config.load()
 
         self.projects_combobox = QComboBox()
+        self.projects_combobox.currentIndexChanged.connect(
+            self.on_selected_project_changed
+        )
 
         self.add_project_button = QPushButton("Add...")
         self.add_project_button.pressed.connect(self.open_new_project_dialog)
@@ -59,9 +63,16 @@ class MainWindow(QWidget):
         self.update_from_config()
 
     def update_from_config(self):
+        self.projects_combobox.currentIndexChanged.disconnect(
+            self.on_selected_project_changed
+        )
         projects = [project.name for project in self.config.projects]
         self.projects_combobox.clear()
         self.projects_combobox.addItems(projects)
+        self.projects_combobox.setCurrentIndex(self.config.default_project)
+        self.projects_combobox.currentIndexChanged.connect(
+            self.on_selected_project_changed
+        )
 
         projects_empty = len(projects) == 0
         self.remove_project_button.setEnabled(not projects_empty)
@@ -107,6 +118,7 @@ class MainWindow(QWidget):
         )
         if reply == QMessageBox.Yes:
             self.config.projects.remove(project_to_remove)
+            self.config.default_project -= 1
             self.config.save()
             self.update_from_config()
             print(f"Successfully removed {project_to_remove.name}")
@@ -126,6 +138,12 @@ class MainWindow(QWidget):
         self.update_from_config()
         self.projects_combobox.setCurrentIndex(project_to_update_index)
         print(f"Successfully updated {updated_project.name}")
+
+    def on_selected_project_changed(self):
+        self.config.default_project = self.projects_combobox.currentIndex()
+
+    def closeEvent(self, event: QCloseEvent):
+        self.config.save()
 
 
 def show_gui():
