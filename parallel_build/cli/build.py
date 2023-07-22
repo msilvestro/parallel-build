@@ -18,7 +18,7 @@ def error_echo(error: str):
 @click.option("--continuous", "-c", is_flag=True)
 def build(project_name: str, continuous: bool):
     BuildStep.start.set(start_echo)
-    BuildStep.message.set(click.echo)
+    BuildStep.long_message.set(click.echo)
     BuildStep.error.set(error_echo)
 
     click.secho("// Parallel Build", fg="green", bold=True)

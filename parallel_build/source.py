@@ -35,7 +35,7 @@ class Interrupt(Exception):
 
 
 class LocalSource(BuildStep):
-    name = "Pre build: local source"
+    name = "Local project"
 
     def __init__(self, project_name: str, project_path: str, verbose: bool = False):
         self.project_name = project_name
@@ -55,7 +55,7 @@ class LocalSource(BuildStep):
         if self.interrupt:
             raise Interrupt("Interrupting copy operation")
         if self.verbose:
-            self.message.emit(f"Copying {src} to {dst}")
+            self.long_message.emit(f"Copying {src} to {dst}")
         return shutil.copy2(src, dst, follow_symlinks=True)
 
     @contextmanager
@@ -81,7 +81,7 @@ class LocalSource(BuildStep):
 
 
 class GitSource(BuildStep):
-    name = "Pre build: git source"
+    name = "Git repository"
 
     def __init__(
         self, project_name: str, git_repository: str, git_polling_interval: int = 30
@@ -113,7 +113,7 @@ class GitSource(BuildStep):
             ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
         )
         while self.build_count > 0 and not self.interrupt:
-            self.message.emit(
+            self.long_message.emit(
                 run_subprocess(["git", "pull"], cwd=self.temp_project_path)
             )
             current_commit = run_subprocess(

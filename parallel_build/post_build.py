@@ -28,18 +28,20 @@ class Interrupt(Exception):
 
 
 class CopyBuild(BuildStep):
-    name = "Post build: Copy build"
+    name = "Copy build"
 
-    def __init__(self, build_path: Path, target_path: str):
+    def __init__(self, build_path: Path, target_path: str, verbose: bool = False):
         self.build_path = build_path
         self.target_path = target_path
+        self.verbose = verbose
 
         self.interrupt = False
 
     def interruptable_copy(self, src, dst, *, follow_symlinks=True):
         if self.interrupt:
             raise Interrupt("Interrupting copy operation")
-        # self.message.emit(f"Copying {src} to {dst}")
+        if not self.verbose:
+            self.long_message.emit(f"Copying {src} to {dst}")
         time.sleep(1)
         return shutil.copy2(src, dst, follow_symlinks=True)
 
@@ -57,7 +59,7 @@ class CopyBuild(BuildStep):
                 copy_function=self.interruptable_copy,
             )
         except Interrupt:
-            self.message.emit("Project files copy stopped.")
+            self.message.emit("Project files copy stopped")
 
     @BuildStep.end_method
     def stop(self):
@@ -65,7 +67,7 @@ class CopyBuild(BuildStep):
 
 
 class PublishItch(BuildStep):
-    name = "Post build: Publish on itch.io"
+    name = "Publish on itch.io"
 
     def __init__(
         self, build_path: Path, itch_user: str, itch_game: str, itch_channel: str
@@ -84,8 +86,8 @@ class PublishItch(BuildStep):
             )
             self.push_process.start()
             for line in self.push_process.output_lines:
-                self.message.emit(line)
-            self.message.emit(run_subprocess(["butler", "status", self.itch_path]))
+                self.long_message.emit(line)
+            self.long_message.emit(run_subprocess(["butler", "status", self.itch_path]))
         except FileNotFoundError:
             self.error.emit(
                 "Cannot find `butler` for Itch publish! Please install it: https://itch.io/docs/butler/"

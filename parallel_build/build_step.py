@@ -15,7 +15,8 @@ class BuildStepEvent:
 
 class BuildStep:
     start = BuildStepEvent(str)
-    message = BuildStepEvent(str)
+    long_message = BuildStepEvent(str)
+    short_message = BuildStepEvent(str)
     error = BuildStepEvent(str)
     end = BuildStepEvent(str)
 
@@ -37,3 +38,13 @@ class BuildStep:
             return output
 
         return _end_method
+
+    @property
+    def message(self):
+        class MessageEmitter:
+            @staticmethod
+            def emit(*args, **kwargs):
+                self.short_message.emit(*args, **kwargs)
+                self.long_message.emit(*args, **kwargs)
+
+        return MessageEmitter

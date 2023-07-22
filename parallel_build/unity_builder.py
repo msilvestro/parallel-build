@@ -1,4 +1,5 @@
 import platform
+import re
 from pathlib import Path
 
 import msgspec
@@ -97,6 +98,8 @@ class UnityBuilder(BuildStep):
 
     name = "Unity builder"
 
+    log_parser_regex = re.compile(r"(\[.*?\d+\/\d+.*?\])")
+
     def __init__(
         self,
         project_name: str,
@@ -131,7 +134,7 @@ class UnityBuilder(BuildStep):
     @BuildStep.start_method
     @BuildStep.end_method
     def run(self):
-        self.message.emit(
+        self.long_message.emit(
             f"Starting new build of {self.project_name} in {self.project_path}..."
         )
         self.build_command.start()
@@ -147,12 +150,15 @@ class UnityBuilder(BuildStep):
                     error_message += line + "\n"
             if line == "Aborting batchmode due to failure:":
                 inside_error_message = True
-            self.message.emit(line)
+            self.long_message.emit(line)
+            parsed_line = self.log_line_parser(line)
+            if parsed_line:
+                self.short_message.emit(parsed_line)
             self.progress.emit()
 
         return_value = self.build_command.return_value
         if return_value == 0:
-            self.message.emit("Success!")
+            self.long_message.emit("Success!")
         else:
             self.error.emit(f"Error ({return_value})")
             self.error.emit(error_message)
@@ -162,4 +168,14 @@ class UnityBuilder(BuildStep):
     @BuildStep.end_method
     def stop(self):
         self.build_command.stop()
-        self.message.emit("\nUnity build stopped")
+        self.long_message.emit("\nUnity build stopped")
+
+    def log_line_parser(self, line: str):
+        if line.startswith("DisplayProgressbar: "):
+            return line[len("DisplayProgressbar: ") :]
+        if line.startswith("Compiling shader"):
+            return line
+        if line.startswith("["):
+            match = re.search(self.log_parser_regex, line)
+            if match:
+                return line[len(match.group(0)) :]

@@ -70,15 +70,26 @@ class BuildDialog(QDialog):
     @Slot(str)
     def on_build_step(self, build_step_name: str):
         self.build_step_label.setText(build_step_name)
+        self.build_message_label.setText("")
         self.output_text_area.appendPlainText(f"\n// {build_step_name}")
 
     @Slot(str)
+    def on_build_short_progress(self, short_message: str):
+        self.build_message_label.setText(short_message)
+
+    @Slot(str)
     def on_build_progress(self, message: str):
-        self.build_message_label.setText(message)
         self.output_text_area.appendPlainText(message)
+
+    @Slot(str)
+    def on_build_error(self, error_message: str):
+        self.output_text_area.appendPlainText(error_message)
+        self.build_message_label.setText(error_message)
+        self.build_message_label.setStyleSheet("color: red;")
 
     def cancel(self):
         self.close()
 
     def closeEvent(self, event: QCloseEvent):
         self.thread.stop()
+        self.thread.quit()
