@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 import msgspec
 from msgspec import Struct
@@ -8,6 +8,8 @@ from msgspec import Struct
 from parallel_build.utils import get_app_dir
 
 CONFIG_PATH = Path(get_app_dir("ParallelBuild")) / "config.yaml"
+
+NonEmptyString = Annotated[str, msgspec.Meta(min_length=1)]
 
 
 class Base(Struct, kw_only=True):
@@ -45,7 +47,7 @@ class ProjectPostBuildAction(Base):
 
 
 class Project(Base):
-    name: str
+    name: NonEmptyString
     source: ProjectSource
     build: ProjectBuildConfig
     post_build: list[ProjectPostBuildAction] = []

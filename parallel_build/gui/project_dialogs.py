@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
 )
@@ -120,39 +121,65 @@ class ManageProjectDialog(QDialog):
         self.copy_path_textbox.setText(project_path)
         self.has_chosen_copy_path = True
 
+    def show_validation_error(self, message: str):
+        messagebox = QMessageBox()
+        messagebox.setWindowTitle("Validation error")
+        messagebox.setIcon(QMessageBox.Icon.Warning)
+        messagebox.setText(message)
+        messagebox.exec()
+        return False
+
     def generate_project(self):
+        project_name = self.project_name_textbox.text()
+        if project_name == "":
+            self.show_validation_error("Project name cannot be empty")
+            return False
+
         post_build_actions = []
         if self.copy_groupbox.isChecked():
             post_build_actions.append(
                 {"action": "copy", "params": {"target": self.copy_path_textbox.text()}}
             )
         if self.itch_groupbox.isChecked():
+            itch_user = self.itch_user_textbox.text()
+            itch_game = self.itch_game_textbox.text()
+            itch_channel = self.itch_channel_textbox.text()
+            if itch_user == "" or itch_game == "" or itch_channel == "":
+                self.show_validation_error(
+                    "No empty value allowed for itch.io parameters"
+                )
+                return False
+
             post_build_actions.append(
                 {
                     "action": "publish-itch",
                     "params": {
-                        "itch_user": self.itch_user_textbox.text(),
-                        "itch_game": self.itch_game_textbox.text(),
-                        "itch_channel": self.itch_channel_textbox.text(),
+                        "itch_user": itch_user,
+                        "itch_game": itch_game,
+                        "itch_channel": itch_channel,
                     },
                 }
             )
-        return msgspec.convert(
-            {
-                "name": self.project_name_textbox.text(),
-                "source": {
-                    "type": self.source_type,
-                    "value": self.source_value,
+        try:
+            return msgspec.convert(
+                {
+                    "name": project_name,
+                    "source": {
+                        "type": self.source_type,
+                        "value": self.source_value,
+                    },
+                    "build": {
+                        "target": self.build_target_combobox.currentText(),
+                        "method": self.build_method_textbox.text(),
+                        "path": self.build_path_textbox.text(),
+                    },
+                    "post_build": post_build_actions,
                 },
-                "build": {
-                    "target": self.build_target_combobox.currentText(),
-                    "method": self.build_method_textbox.text(),
-                    "path": self.build_path_textbox.text(),
-                },
-                "post_build": post_build_actions,
-            },
-            type=Project,
-        )
+                type=Project,
+            )
+        except msgspec.ValidationError as e:
+            self.show_validation_error(str(e))
+            return False
 
     def cancel(self):
         self.close()
@@ -170,7 +197,10 @@ class AddNewProjectDialog(ManageProjectDialog):
         self.button_box.accepted.connect(self.add)
 
     def add(self):
-        self.parent().add_project(self.generate_project())
+        project = self.generate_project()
+        if not project:
+            return
+        self.parent().add_project(project)
         self.close()
 
 
@@ -200,7 +230,10 @@ class EditProjectDialog(ManageProjectDialog):
         self.button_box.accepted.connect(self.edit)
 
     def edit(self):
-        self.parent().update_project(self.project_index, self.generate_project())
+        project = self.generate_project()
+        if not project:
+            return
+        self.parent().update_project(self.project_index, project)
         self.close()
 
 
