@@ -93,14 +93,14 @@ class MainWindow(QWidget):
             self,
             "Select project type",
             "Project type:",
-            ("Local folder", "Git repository"),
+            (ProjectSourceType.local.pretty_name, ProjectSourceType.git.pretty_name),
             editable=False,
         )
         if ok:
             match choice:
-                case "Local folder":
+                case ProjectSourceType.local.pretty_name:
                     AddNewLocalProjectDialog(self).exec()
-                case "Git repository":
+                case ProjectSourceType.git.pretty_name:
                     AddNewGitProjectDialog(self).exec()
 
     def add_project(self, project: Project):

@@ -20,6 +20,14 @@ class ProjectSourceType(str, Enum):
     local = "local"
     git = "git"
 
+    @property
+    def pretty_name(self):
+        match self:
+            case ProjectSourceType.local:
+                return "Local folder"
+            case ProjectSourceType.git:
+                return "Git repository"
+
 
 class ProjectSource(Base):
     type: ProjectSourceType

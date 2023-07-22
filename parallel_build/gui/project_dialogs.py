@@ -130,6 +130,12 @@ class ManageProjectDialog(QDialog):
         return False
 
     def generate_project(self):
+        if self.source_value == "":
+            self.show_validation_error(
+                f"{self.source_type.pretty_name} cannot be empty"
+            )
+            return False
+
         project_name = self.project_name_textbox.text()
         if project_name == "":
             self.show_validation_error("Project name cannot be empty")
