@@ -52,8 +52,8 @@ class BuildProcess:
                     observer = UnityRecentlyUsedProjectsObserver(temp_project_path)
                     builder.progress.set(observer.find_and_remove)
                     return_value = builder.run()
-                    print("\a")
                     if return_value != 0:
+                        print("\a")
                         with_error = True
                         break
 
@@ -65,6 +65,8 @@ class BuildProcess:
                         )
                         self.current_build_step = post_build_action
                         post_build_action.run()
+
+                    print("\a")
                 if not continuous:
                     break
         if self.on_build_end:
