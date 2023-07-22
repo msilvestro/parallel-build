@@ -56,6 +56,8 @@ class BuildDialog(QDialog):
         self.thread.started.connect(self.on_build_start)
         self.thread.finished.connect(self.on_thread_end)
 
+        self.should_close = False
+
     def start_build_process(self, continuous: bool, project_name: str):
         self.thread.configure(continuous, project_name)
         self.thread.start()
@@ -66,6 +68,9 @@ class BuildDialog(QDialog):
         self.progress_bar.setMaximum(0)
 
     def on_thread_end(self):
+        if self.should_close:
+            self.close()
+            return
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(100)
@@ -79,20 +84,28 @@ class BuildDialog(QDialog):
 
     @Slot(str)
     def on_build_step(self, build_step_name: str):
+        if self.should_close:
+            return
         self.build_step_label.setText(build_step_name)
         self.build_message_label.setText("")
         self.output_text_area.appendPlainText(f"\n// {build_step_name}")
 
     @Slot(str)
     def on_build_short_progress(self, short_message: str):
+        if self.should_close:
+            return
         self.build_message_label.setText(short_message.strip())
 
     @Slot(str)
     def on_build_progress(self, message: str):
+        if self.should_close:
+            return
         self.output_text_area.appendPlainText(message)
 
     @Slot(str)
     def on_build_error(self, error_message: str):
+        if self.should_close:
+            return
         self.output_text_area.appendPlainText(error_message)
         self.build_message_label.setText(error_message.strip())
         self.build_message_label.setStyleSheet("color: red;")
@@ -101,4 +114,13 @@ class BuildDialog(QDialog):
         self.close()
 
     def closeEvent(self, event: QCloseEvent):
+        if self.thread.isFinished():
+            return
+
         self.thread.stop()
+        if not self.should_close:
+            self.build_message_label.setText(
+                "Please wait while stopping build process..."
+            )
+        self.should_close = True
+        event.setAccepted(False)
