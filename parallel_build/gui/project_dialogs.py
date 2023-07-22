@@ -48,12 +48,19 @@ class ManageProjectDialog(QDialog):
         main_form.addRow(self.project_name_label, self.project_name_textbox)
         self.build_target_label = QLabel("Build target:")
         self.build_target_combobox = QComboBox()
-        build_target_value = [build_target.value for build_target in BuildTarget]
-        self.build_target_combobox.addItems(build_target_value)
+        self.build_targets = [build_target for build_target in BuildTarget]
+        self.build_target_combobox.addItems(self.build_targets)
         self.build_target_combobox.setCurrentIndex(
-            build_target_value.index(BuildTarget.webgl)
+            self.build_targets.index(BuildTarget.webgl)
+        )
+        self.build_target_combobox.currentIndexChanged.connect(
+            self.on_build_target_change
         )
         main_form.addRow(self.build_target_label, self.build_target_combobox)
+        self.build_method_label = QLabel("Build method:")
+        self.build_method_textbox = QLineEdit()
+        self.build_method_textbox.setEnabled(False)
+        main_form.addRow(self.build_method_label, self.build_method_textbox)
         self.build_path_label = QLabel("Build path:")
         self.build_path_textbox = QLineEdit("Builds/WebGL")
         main_form.addRow(self.build_path_label, self.build_path_textbox)
@@ -138,6 +145,7 @@ class ManageProjectDialog(QDialog):
                 },
                 "build": {
                     "target": self.build_target_combobox.currentText(),
+                    "method": self.build_method_textbox.text(),
                     "path": self.build_path_textbox.text(),
                 },
                 "post_build": post_build_actions,
@@ -147,6 +155,12 @@ class ManageProjectDialog(QDialog):
 
     def cancel(self):
         self.close()
+
+    def on_build_target_change(self):
+        self.build_method_textbox.setEnabled(
+            self.build_target_combobox.currentIndex()
+            == self.build_targets.index(BuildTarget.custom)
+        )
 
 
 class AddNewProjectDialog(ManageProjectDialog):
@@ -166,6 +180,7 @@ class EditProjectDialog(ManageProjectDialog):
         self.project_name_textbox.setText(project.name)
         self.set_source_value(project.source.value)
         self.build_target_combobox.setCurrentText(project.build.target)
+        self.build_method_textbox.setText(project.build.method)
         self.build_path_textbox.setText(project.build.path)
 
         self.copy_groupbox.setChecked(False)

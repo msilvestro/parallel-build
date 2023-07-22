@@ -46,6 +46,7 @@ class BuildProcess:
                         project_name=self.project.name,
                         project_path=temp_project_path,
                         build_target=self.project.build.target,
+                        build_method=self.project.build.method,
                         build_path=self.project.build.path,
                     )
                     self.current_build_step = builder

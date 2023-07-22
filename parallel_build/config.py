@@ -30,10 +30,12 @@ class BuildTarget(str, Enum):
     macos = "OSXUniversal"
     linux = "Linux64"
     webgl = "WebGL"
+    custom = "Custom"
 
 
 class ProjectBuildConfig(Base):
     target: BuildTarget = BuildTarget.webgl
+    method: str | None = None
     path: str = "Build/WebGL"
 
 

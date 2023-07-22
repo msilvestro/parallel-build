@@ -81,16 +81,20 @@ namespace ParallelBuild
 """
 
 
-def get_build_args(project_path: Path, build_target, build_path):
-    if build_target == "WebGL":
-        editor_path = project_path / "Assets" / "Editor"
-        editor_path.mkdir(exist_ok=True, parents=True)
-        with open(editor_path / "WebGLBuilder.cs", "w") as f:
-            f.write(WEBGL_BUILDER)
-        return (
-            f"-executeMethod ParallelBuild.WebGLBuilder.Build -buildpath {build_path}"
-        )
-    return f'-build{build_target}Player "{build_path}"'
+def get_build_args(
+    project_path: Path, build_target: BuildTarget, build_method: str, build_path: str
+):
+    match build_target:
+        case BuildTarget.webgl:
+            editor_path = project_path / "Assets" / "Editor"
+            editor_path.mkdir(exist_ok=True, parents=True)
+            with open(editor_path / "WebGLBuilder.cs", "w") as f:
+                f.write(WEBGL_BUILDER)
+            return f"-executeMethod ParallelBuild.WebGLBuilder.Build -buildpath {build_path}"
+        case BuildTarget.custom:
+            return f"-executeMethod {build_method} -buildpath {build_path}"
+        case _:
+            return f'-build{build_target}Player "{build_path}"'
 
 
 class UnityBuilder(BuildStep):
@@ -105,6 +109,7 @@ class UnityBuilder(BuildStep):
         project_name: str,
         project_path: Path,
         build_target: BuildTarget,
+        build_method: str,
         build_path: str,
     ):
         self.project_name = project_name
@@ -126,7 +131,9 @@ class UnityBuilder(BuildStep):
                     "-batchmode",
                     f'-projectpath "{self.project_path}"',
                     "-logFile -",
-                    get_build_args(self.project_path, build_target, build_path),
+                    get_build_args(
+                        self.project_path, build_target, build_method, build_path
+                    ),
                 ]
             )
         )
