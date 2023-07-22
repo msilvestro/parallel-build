@@ -19,12 +19,11 @@ from parallel_build.utils import OperatingSystem
 class BuildDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
-        self.setWindowTitle("Build in progress")
+        self.setWindowTitle("Build")
         self.resize(500, 200)
 
         self.progress_bar = QProgressBar()
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(0)
+        self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
 
         self.build_step_label = QLabel("Warming up")
@@ -55,7 +54,7 @@ class BuildDialog(QDialog):
 
         self.thread = BuildThread(self)
         self.thread.started.connect(self.on_build_start)
-        self.thread.finished.connect(self.on_build_end)
+        self.thread.finished.connect(self.on_thread_end)
 
     def start_build_process(self, continuous: bool, project_name: str):
         self.thread.configure(continuous, project_name)
@@ -63,9 +62,20 @@ class BuildDialog(QDialog):
 
     def on_build_start(self):
         self.output_text_area.clear()
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(0)
 
-    def on_build_end(self):
+    def on_thread_end(self):
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(100)
         self.cancel_button.setText("Close")
+
+    def on_build_end(self, with_error: bool):
+        self.on_thread_end()
+        if not with_error:
+            self.build_step_label.setText("Finished successfully!")
+            self.build_message_label.setText("")
 
     @Slot(str)
     def on_build_step(self, build_step_name: str):

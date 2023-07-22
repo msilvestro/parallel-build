@@ -9,7 +9,7 @@ class BuildSignals(QObject):
     build_short_progress = Signal(str)
     build_progress = Signal(str)
     build_error = Signal(str)
-    build_end = Signal()
+    build_end = Signal(bool)
 
 
 class BuildThread(QThread):

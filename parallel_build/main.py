@@ -1,3 +1,5 @@
+from typing import Callable
+
 from parallel_build.config import Config
 from parallel_build.post_build import get_post_build_action
 from parallel_build.source import get_source
@@ -12,7 +14,9 @@ def get_project(config: Config, project_name: str):
 
 
 class BuildProcess:
-    def __init__(self, project_name: str, on_build_end=None):
+    def __init__(
+        self, project_name: str, on_build_end: Callable[[bool], None] | None = None
+    ):
         config = Config.load()
         project = get_project(config, project_name)
         if project is None:
@@ -25,6 +29,7 @@ class BuildProcess:
 
     def run(self, continuous: bool):
         self.interrupt = False
+        with_error = False
         with get_source(
             self.project.name,
             self.project.source.type,
@@ -49,6 +54,7 @@ class BuildProcess:
                     return_value = builder.run()
                     print("\a")
                     if return_value != 0:
+                        with_error = True
                         break
 
                     for build_action in self.project.post_build:
@@ -62,7 +68,7 @@ class BuildProcess:
                 if not continuous:
                     break
         if self.on_build_end:
-            self.on_build_end()
+            self.on_build_end(with_error)
 
     def stop(self):
         self.interrupt = True

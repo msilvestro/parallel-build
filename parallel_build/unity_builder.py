@@ -96,9 +96,9 @@ def get_build_args(project_path: Path, build_target, build_path):
 class UnityBuilder(BuildStep):
     progress = BuildStepEvent()
 
-    name = "Unity builder"
+    name = "Unity build"
 
-    log_parser_regex = re.compile(r"(\[.*?\d+\/\d+.*?\])")
+    log_parser_regex = re.compile(r"(\[.*?\d+\/\d+.*?\]|\[BUSY.*?\])")
 
     def __init__(
         self,
@@ -174,6 +174,8 @@ class UnityBuilder(BuildStep):
         if line.startswith("DisplayProgressbar: "):
             return line[len("DisplayProgressbar: ") :]
         if line.startswith("Compiling shader"):
+            return line
+        if line.startswith("Start importing "):
             return line
         if line.startswith("["):
             match = re.search(self.log_parser_regex, line)
