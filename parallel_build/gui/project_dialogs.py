@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from parallel_build.config import BuildTarget, Project, ProjectSourceType
+from parallel_build.unity_builder import validate_unity_project
 from parallel_build.unity_hub import UnityRecentlyUsedProjects
 
 
@@ -127,7 +128,6 @@ class ManageProjectDialog(QDialog):
         messagebox.setIcon(QMessageBox.Icon.Warning)
         messagebox.setText(message)
         messagebox.exec()
-        return False
 
     def generate_project(self):
         if self.source_value == "":
@@ -298,6 +298,14 @@ class LocalProjectMixin:
         project_path = QFileDialog.getExistingDirectory(self, "Select project path")
         if project_path == "":
             return
+        if not validate_unity_project(Path(project_path)):
+            messagebox = QMessageBox()
+            messagebox.setWindowTitle("Invalid project")
+            messagebox.setIcon(QMessageBox.Icon.Warning)
+            messagebox.setText(f"{project_path} is not a valid Unity project")
+            messagebox.exec()
+            return
+
         self.project_path_textbox.setText(project_path)
         self.on_project_path_update()
 

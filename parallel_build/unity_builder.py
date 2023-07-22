@@ -30,6 +30,23 @@ def get_editor_path(editor_version: str):
         raise Exception(f"Platform {platform.system()} not supported")
 
 
+def get_editor_version(project_path: Path):
+    with open(
+        project_path / "ProjectSettings" / "ProjectVersion.txt",
+        encoding="utf-8",
+    ) as f:
+        project_version_yaml = msgspec.yaml.decode(f.read())
+    return project_version_yaml["m_EditorVersion"]
+
+
+def validate_unity_project(project_path: Path):
+    try:
+        get_editor_version(project_path)
+        return True
+    except FileNotFoundError:
+        return False
+
+
 WEBGL_BUILDER = """
 using System;
 using System.Linq;
@@ -116,12 +133,7 @@ class UnityBuilder(BuildStep):
         self.project_path = Path(project_path)
         self.build_path = get_build_path(project_path, build_path)
 
-        with open(
-            self.project_path / "ProjectSettings" / "ProjectVersion.txt",
-            encoding="utf-8",
-        ) as f:
-            project_version_yaml = msgspec.yaml.decode(f.read())
-        editor_version = project_version_yaml["m_EditorVersion"]
+        editor_version = get_editor_version(self.project_path)
 
         self.build_command = Command(
             " ".join(
