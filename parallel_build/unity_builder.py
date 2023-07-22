@@ -134,7 +134,7 @@ class UnityBuilder(BuildStep):
     @BuildStep.start_method
     @BuildStep.end_method
     def run(self):
-        self.long_message.emit(
+        self.message.emit(
             f"Starting new build of {self.project_name} in {self.project_path}..."
         )
         self.build_command.start()

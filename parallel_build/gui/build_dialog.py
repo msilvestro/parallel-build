@@ -26,7 +26,7 @@ class BuildDialog(QDialog):
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
 
-        self.build_step_label = QLabel("Warming up")
+        self.build_step_label = QLabel("Build in progress")
         self.build_step_label.setStyleSheet("font-weight: bold;")
         self.build_message_label = QElidedLabel()
         labels_layout = QHBoxLayout()
@@ -85,7 +85,7 @@ class BuildDialog(QDialog):
 
     @Slot(str)
     def on_build_short_progress(self, short_message: str):
-        self.build_message_label.setText(short_message)
+        self.build_message_label.setText(short_message.strip())
 
     @Slot(str)
     def on_build_progress(self, message: str):
@@ -94,7 +94,7 @@ class BuildDialog(QDialog):
     @Slot(str)
     def on_build_error(self, error_message: str):
         self.output_text_area.appendPlainText(error_message)
-        self.build_message_label.setText(error_message)
+        self.build_message_label.setText(error_message.strip())
         self.build_message_label.setStyleSheet("color: red;")
 
     def cancel(self):
@@ -102,4 +102,3 @@ class BuildDialog(QDialog):
 
     def closeEvent(self, event: QCloseEvent):
         self.thread.stop()
-        self.thread.quit()
