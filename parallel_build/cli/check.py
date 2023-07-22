@@ -13,8 +13,9 @@ def check():
             output = (
                 subprocess.check_output([command, "--version"]).decode("utf-8").strip()
             )
-            print(f"[✓] {command}: {output}")
+            click.secho(f"[✓] {command}: {output}", fg="green")
         except FileNotFoundError:
-            print(
-                f"[✘] Cannot find '{command}' for {reason}! Please install it: {install_link}"
+            click.secho(
+                f"[✘] Cannot find '{command}' for {reason}! Please install it: {install_link}",
+                fg="red",
             )

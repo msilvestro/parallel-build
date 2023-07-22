@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QInputDialog,
+    QLayout,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -57,6 +58,7 @@ class MainWindow(QWidget):
         layout.addLayout(projects_buttons_layout)
         layout.addWidget(self.continuous_checkbox)
         layout.addWidget(self.build_button)
+        layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
         self.setLayout(layout)
 

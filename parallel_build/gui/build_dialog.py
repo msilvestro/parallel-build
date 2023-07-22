@@ -20,7 +20,7 @@ class BuildDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("Build")
-        self.resize(500, 200)
+        self.resize(500, 250)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
@@ -82,6 +82,9 @@ class BuildDialog(QDialog):
             self.build_step_label.setText("Finished successfully!")
             self.build_message_label.setText("")
 
+    def update_build_message_label_text(self, text: str):
+        self.build_message_label.setText(" ".join(text.strip().split()))
+
     @Slot(str)
     def on_build_step(self, build_step_name: str):
         if self.should_close:
@@ -94,7 +97,7 @@ class BuildDialog(QDialog):
     def on_build_short_progress(self, short_message: str):
         if self.should_close:
             return
-        self.build_message_label.setText(short_message.strip())
+        self.update_build_message_label_text(short_message.strip())
 
     @Slot(str)
     def on_build_progress(self, message: str):
@@ -107,7 +110,7 @@ class BuildDialog(QDialog):
         if self.should_close:
             return
         self.output_text_area.appendPlainText(error_message)
-        self.build_message_label.setText(error_message.strip())
+        self.update_build_message_label_text(error_message.strip())
         self.build_message_label.setStyleSheet("color: red;")
 
     def cancel(self):

@@ -14,7 +14,7 @@ def show():
         CONFIG_PATH,
         encoding="utf-8",
     ) as file:
-        print(file.read())
+        click.echo(file.read())
 
 
 @config.command()
@@ -60,4 +60,4 @@ projects:
           itch_channel: win
 git_polling_interval: 20
 """.strip()
-    print(example_config_str)
+    click.echo(example_config_str)

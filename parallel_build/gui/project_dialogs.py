@@ -109,6 +109,7 @@ class ManageProjectDialog(QDialog):
         layout.addWidget(self.button_box)
 
         self.setLayout(layout)
+        self.setMaximumHeight(0)
 
         self.on_init_end()
 
