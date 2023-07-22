@@ -117,10 +117,11 @@ class BuildDialog(QDialog):
         if self.thread.isFinished():
             return
 
+        if self.should_close:
+            # force close
+            return
+
         self.thread.stop()
-        if not self.should_close:
-            self.build_message_label.setText(
-                "Please wait while stopping build process..."
-            )
+        self.build_message_label.setText("Please wait while stopping build process...")
         self.should_close = True
         event.setAccepted(False)
