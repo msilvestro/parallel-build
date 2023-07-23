@@ -1,3 +1,6 @@
+from parallel_build.command import CommandExecutor
+
+
 class BuildStepEvent:
     def __init__(self, *args, **kwargs):
         self._callbacks = []
@@ -19,6 +22,9 @@ class BuildStep:
     short_message = BuildStepEvent(str)
     error = BuildStepEvent(str)
     end = BuildStepEvent(str)
+    command_executor = CommandExecutor(
+        stdout_function=long_message.emit, stderr_function=error.emit
+    )
 
     name: str
 
@@ -39,12 +45,13 @@ class BuildStep:
 
         return _end_method
 
+    @classmethod
     @property
-    def message(self):
+    def message(cls):
         class MessageEmitter:
             @staticmethod
             def emit(*args, **kwargs):
-                self.short_message.emit(*args, **kwargs)
-                self.long_message.emit(*args, **kwargs)
+                cls.short_message.emit(*args, **kwargs)
+                cls.long_message.emit(*args, **kwargs)
 
         return MessageEmitter

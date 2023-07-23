@@ -1,0 +1,6 @@
+class BuildProcessError(Exception):
+    ...
+
+
+class BuildProcessInterrupt(Exception):
+    ...

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from parallel_build.build_step import BuildStep
 from parallel_build.config import ProjectSourceType
-from parallel_build.utils import run_subprocess
+from parallel_build.exceptions import BuildProcessError, BuildProcessInterrupt
 
 
 def get_source(
@@ -53,7 +53,7 @@ class LocalSource(BuildStep):
 
     def interruptable_copy(self, src, dst, *, follow_symlinks=True):
         if self.interrupt:
-            raise Interrupt("Interrupting copy operation")
+            raise BuildProcessInterrupt("Project files copy stopped")
         if self.verbose:
             self.long_message.emit(f"Copying {src} to {dst}")
         return shutil.copy2(src, dst, follow_symlinks=True)
@@ -71,9 +71,8 @@ class LocalSource(BuildStep):
                     copy_function=self.interruptable_copy,
                     ignore=ignore_patterns(self.project_path),
                 )
-            except Interrupt:
-                self.message.emit("\nProject files copy stopped")
-                pass
+            except FileNotFoundError as e:
+                raise BuildProcessError(e)
             yield temp_project_path
 
     def stop(self):
@@ -98,9 +97,13 @@ class GitSource(BuildStep):
     @BuildStep.start_method
     def __enter__(self):
         self.temp_project_path.mkdir()
-        self.message.emit(f"Cloning {self.project_name} to {self.temp_project_path}...")
-        # strange: it seems like part of the output of git clone is sent to stderr
-        run_subprocess(["git", "clone", self.git_repository, self.temp_project_path])
+        self.short_message.emit(
+            f"Cloning {self.project_name} to {self.temp_project_path}..."
+        )
+        self.command_executor.run(
+            ["git", "clone", self.git_repository, self.temp_project_path],
+            error_message=f"Cannot clone {self.git_repository}",
+        )
         return self
 
     @BuildStep.end_method
@@ -109,15 +112,15 @@ class GitSource(BuildStep):
 
     @contextmanager
     def temporary_project(self):
-        previous_commit = run_subprocess(
-            ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
+        previous_commit = self.command_executor.run(
+            ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path, return_output=True
         )
         while self.build_count > 0 and not self.interrupt:
-            self.long_message.emit(
-                run_subprocess(["git", "pull"], cwd=self.temp_project_path)
-            )
-            current_commit = run_subprocess(
-                ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path
+            self.command_executor.run(["git", "pull"], cwd=self.temp_project_path)
+            current_commit = self.command_executor.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=self.temp_project_path,
+                return_output=True,
             )
             if current_commit != previous_commit or self.interrupt:
                 break
@@ -133,4 +136,5 @@ class GitSource(BuildStep):
         self.build_count += 1
 
     def stop(self):
+        self.command_executor.stop()
         self.interrupt = True

@@ -76,9 +76,9 @@ class BuildDialog(QDialog):
         self.progress_bar.setValue(100)
         self.cancel_button.setText("Close")
 
-    def on_build_end(self, with_error: bool):
+    def on_build_end(self, finished_with_success: bool):
         self.on_thread_end()
-        if not with_error:
+        if finished_with_success:
             self.build_step_label.setText("Finished successfully!")
             self.build_message_label.setText("")
 
