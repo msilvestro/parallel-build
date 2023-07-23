@@ -144,12 +144,6 @@ class ManageProjectDialog(QDialog):
                 f"{self.source_value} is not a valid Unity project"
             )
             return False
-        elif (
-            self.source_type == ProjectSourceType.git
-            and subprocess.run(f"git ls-remote -h {self.source_value}").returncode != 0
-        ):
-            self.show_validation_error(f"{self.source_value} is not a valid repository")
-            return False
 
         project_name = self.project_name_textbox.text()
         if project_name == "":
@@ -362,15 +356,22 @@ class GitProjectMixin:
     source_type = ProjectSourceType.git
 
     def select_source_layout(self):
-        select_project_path_layout = QVBoxLayout()
+        select_project_repository_layout = QVBoxLayout()
         self.project_repository_label = QLabel("Git repository:")
+        project_repository_value_layout = QHBoxLayout()
         self.project_repository_textbox = QLineEdit()
         self.project_repository_textbox.setPlaceholderText(
             "git@github.com:gfreeman/black-mesa.git"
         )
-        select_project_path_layout.addWidget(self.project_repository_label)
-        select_project_path_layout.addWidget(self.project_repository_textbox)
-        return select_project_path_layout
+        self.project_repository_check_button = QPushButton("Check")
+        self.project_repository_check_button.pressed.connect(
+            self.check_valid_repository
+        )
+        project_repository_value_layout.addWidget(self.project_repository_textbox)
+        project_repository_value_layout.addWidget(self.project_repository_check_button)
+        select_project_repository_layout.addWidget(self.project_repository_label)
+        select_project_repository_layout.addLayout(project_repository_value_layout)
+        return select_project_repository_layout
 
     @property
     def source_value(self):
@@ -378,6 +379,25 @@ class GitProjectMixin:
 
     def set_source_value(self, value: str):
         self.project_repository_textbox.setText(value)
+
+    def check_valid_repository(self):
+        valid_repository = (
+            subprocess.run(f"git ls-remote -h {self.source_value}").returncode == 0
+        )
+
+        messagebox = QMessageBox()
+        messagebox.setWindowTitle("Project repository")
+        messagebox.setIcon(
+            QMessageBox.Icon.Information
+            if valid_repository
+            else QMessageBox.Icon.Warning
+        )
+        messagebox.setText(
+            f"{self.source_value} is a valid repository"
+            if valid_repository
+            else f"{self.source_value} is not a valid repository"
+        )
+        messagebox.exec()
 
 
 class AddNewLocalProjectDialog(LocalProjectMixin, AddNewProjectDialog):
