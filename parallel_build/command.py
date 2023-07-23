@@ -53,10 +53,16 @@ class CommandExecutor:
         cwd: PathLike[str] | None = None,
         return_output: bool = False,
         error_message: str | None = None,
+        not_found_error_message: str | None = None,
     ):
         self.current_command = Command(command, cwd=cwd)
-        self.current_command.start()
-        stdout, stderr = self.current_command.communicate()
+        try:
+            self.current_command.start()
+            stdout, stderr = self.current_command.communicate()
+        except FileNotFoundError as e:
+            raise BuildProcessError(
+                not_found_error_message if not_found_error_message else str(e)
+            )
         if self.current_command.return_value == 0:
             if return_output:
                 return stdout

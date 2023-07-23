@@ -43,7 +43,7 @@ class BuildProcess:
                 while not self.interrupt:
                     with source.temporary_project() as temp_project_path:
                         if self.interrupt:
-                            break
+                            raise BuildProcessInterrupt
 
                         builder = UnityBuilder(
                             project_name=self.project.name,
@@ -59,11 +59,13 @@ class BuildProcess:
                         if return_value != 0:
                             print("\a")
                             finished_with_success = False
-                            break
+                            raise BuildProcessError(
+                                f"Unity build error ({return_value})"
+                            )
 
                         for build_action in self.project.post_build:
                             if self.interrupt:
-                                break
+                                raise BuildProcessInterrupt
                             post_build_action = get_post_build_action(
                                 build_action, builder.build_path
                             )
@@ -76,9 +78,9 @@ class BuildProcess:
         except BuildProcessError as e:
             finished_with_success = False
             BuildStep.error.emit(str(e))
-        except BuildProcessInterrupt as e:
+        except BuildProcessInterrupt:
             finished_with_success = False
-            BuildStep.message.emit(str(e))
+
         if self.on_build_end:
             self.on_build_end(finished_with_success)
 

@@ -179,7 +179,6 @@ class UnityBuilder(BuildStep):
         if return_value == 0:
             self.long_message.emit("Success!")
         else:
-            self.error.emit(f"Error ({return_value})")
             self.error.emit(error_message)
 
         return return_value
@@ -187,7 +186,7 @@ class UnityBuilder(BuildStep):
     @BuildStep.end_method
     def stop(self):
         self.build_command.stop()
-        self.long_message.emit("\nUnity build stopped")
+        self.message.emit("\nUnity build stopped")
 
     def log_line_parser(self, line: str):
         if line.startswith("DisplayProgressbar: "):

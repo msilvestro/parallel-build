@@ -30,10 +30,6 @@ def ignore_patterns(project_path: Path):
     return _ignore_patterns
 
 
-class Interrupt(Exception):
-    """Interrupt copy operation."""
-
-
 class LocalSource(BuildStep):
     name = "Local project"
 
@@ -53,7 +49,8 @@ class LocalSource(BuildStep):
 
     def interruptable_copy(self, src, dst, *, follow_symlinks=True):
         if self.interrupt:
-            raise BuildProcessInterrupt("Project files copy stopped")
+            self.message.emit("\nProject files copy stopped")
+            raise BuildProcessInterrupt
         if self.verbose:
             self.long_message.emit(f"Copying {src} to {dst}")
         return shutil.copy2(src, dst, follow_symlinks=True)
@@ -94,14 +91,22 @@ class GitSource(BuildStep):
         self.build_count = 0
         self.interrupt = False
 
+    def run_git(self, git_command, *args, **kwargs):
+        self.command_executor.run(
+            ["git", *git_command],
+            *args,
+            not_found_error_message="Cannot find `git` for repository management! Please install it: https://git-scm.com/",
+            **kwargs,
+        )
+
     @BuildStep.start_method
     def __enter__(self):
         self.temp_project_path.mkdir()
         self.short_message.emit(
             f"Cloning {self.project_name} to {self.temp_project_path}..."
         )
-        self.command_executor.run(
-            ["git", "clone", self.git_repository, self.temp_project_path],
+        self.run_git(
+            ["clone", self.git_repository, self.temp_project_path],
             error_message=f"Cannot clone {self.git_repository}",
         )
         return self
@@ -112,13 +117,13 @@ class GitSource(BuildStep):
 
     @contextmanager
     def temporary_project(self):
-        previous_commit = self.command_executor.run(
-            ["git", "rev-parse", "HEAD"], cwd=self.temp_project_path, return_output=True
+        previous_commit = self.run_git(
+            ["rev-parse", "HEAD"], cwd=self.temp_project_path, return_output=True
         )
         while self.build_count > 0 and not self.interrupt:
-            self.command_executor.run(["git", "pull"], cwd=self.temp_project_path)
-            current_commit = self.command_executor.run(
-                ["git", "rev-parse", "HEAD"],
+            self.run_git(["pull"], cwd=self.temp_project_path)
+            current_commit = self.run_git(
+                ["rev-parse", "HEAD"],
                 cwd=self.temp_project_path,
                 return_output=True,
             )
