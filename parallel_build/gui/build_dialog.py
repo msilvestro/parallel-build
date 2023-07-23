@@ -5,15 +5,17 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QHBoxLayout,
     QLabel,
-    QPlainTextEdit,
     QProgressBar,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
 )
 
 from parallel_build.gui.build_thread import BuildThread
 from parallel_build.gui.elided_label import QElidedLabel
 from parallel_build.utils import OperatingSystem
+
+RED_COLOR = "#ef4e40"
 
 
 class BuildDialog(QDialog):
@@ -33,7 +35,7 @@ class BuildDialog(QDialog):
         labels_layout.addWidget(self.build_step_label, stretch=0)
         labels_layout.addWidget(self.build_message_label, stretch=1)
 
-        self.output_text_area = QPlainTextEdit()
+        self.output_text_area = QTextEdit()
         self.output_text_area.setReadOnly(True)
         self.output_text_area.setFont(QFont(OperatingSystem.monospace_font))
 
@@ -57,6 +59,22 @@ class BuildDialog(QDialog):
         self.thread.finished.connect(self.on_thread_end)
 
         self.should_close = False
+
+    def append_output_text(
+        self,
+        text: str,
+        bold: bool = False,
+        color: str | None = None,
+        add_space_before: bool = False,
+    ):
+        text = text.replace("\n", "<br />")
+        if bold:
+            text = f"<b>{text}</b>"
+        if color:
+            text = f"<span style='color: {color};'>{text}</span>"
+        if add_space_before:
+            text = f"<br />{text}"
+        self.output_text_area.append(text)
 
     def start_build_process(self, continuous: bool, project_name: str):
         self.thread.configure(continuous, project_name)
@@ -90,8 +108,12 @@ class BuildDialog(QDialog):
         if self.should_close:
             return
         self.build_step_label.setText(build_step_name)
-        self.build_message_label.setText("")
-        self.output_text_area.appendPlainText(f"\n// {build_step_name}")
+        print(self.output_text_area.toPlainText())
+        self.append_output_text(
+            f"// {build_step_name}",
+            bold=True,
+            add_space_before=self.output_text_area.toPlainText() != "",
+        )
 
     @Slot(str)
     def on_build_short_progress(self, short_message: str):
@@ -103,15 +125,15 @@ class BuildDialog(QDialog):
     def on_build_progress(self, message: str):
         if self.should_close:
             return
-        self.output_text_area.appendPlainText(message)
+        self.append_output_text(message)
 
     @Slot(str)
     def on_build_error(self, error_message: str):
         if self.should_close:
             return
-        self.output_text_area.appendPlainText(error_message)
+        self.append_output_text(error_message, color=RED_COLOR)
         self.update_build_message_label_text(error_message.strip())
-        self.build_message_label.setStyleSheet("color: red;")
+        self.build_message_label.setStyleSheet(f"color: {RED_COLOR};")
 
     def cancel(self):
         self.close()
