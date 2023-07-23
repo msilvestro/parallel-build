@@ -54,6 +54,7 @@ class CommandExecutor:
         return_output: bool = False,
         error_message: str | None = None,
         not_found_error_message: str | None = None,
+        redirect_stderr_to_stdout: bool = False,
     ):
         self.current_command = Command(command, cwd=cwd)
         try:
@@ -63,6 +64,8 @@ class CommandExecutor:
             raise BuildProcessError(
                 not_found_error_message if not_found_error_message else str(e)
             )
+        if redirect_stderr_to_stdout:
+            stdout = stdout + stderr
         if self.current_command.return_value == 0:
             if return_output:
                 return stdout

@@ -32,6 +32,7 @@ class BuildProcess:
     def run(self, continuous: bool):
         self.interrupt = False
         finished_with_success = True
+        build_count = 0
         try:
             with get_source(
                 self.project.name,
@@ -41,6 +42,8 @@ class BuildProcess:
             ) as source:
                 self.current_build_step = source
                 while not self.interrupt:
+                    BuildStep.start.emit(f"Build #{build_count+1}")
+
                     with source.temporary_project() as temp_project_path:
                         if self.interrupt:
                             raise BuildProcessInterrupt
@@ -73,6 +76,8 @@ class BuildProcess:
                             post_build_action.run()
 
                         print("\a")
+                    BuildStep.end.emit(f"Build #{build_count + 1}")
+                    build_count += 1
                     if not continuous:
                         break
         except BuildProcessError as e:

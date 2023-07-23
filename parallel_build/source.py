@@ -92,7 +92,7 @@ class GitSource(BuildStep):
         self.interrupt = False
 
     def run_git(self, git_command, *args, **kwargs):
-        self.command_executor.run(
+        return self.command_executor.run(
             ["git", *git_command],
             *args,
             not_found_error_message="Cannot find `git` for repository management! Please install it: https://git-scm.com/",
@@ -108,6 +108,7 @@ class GitSource(BuildStep):
         self.run_git(
             ["clone", self.git_repository, self.temp_project_path],
             error_message=f"Cannot clone {self.git_repository}",
+            redirect_stderr_to_stdout=True,  # git clone sends all output to stderr
         )
         return self
 

@@ -71,7 +71,7 @@ class PublishItch(BuildStep):
         self.push_process = None
 
     def run_butler(self, butler_command, *args, **kwargs):
-        self.command_executor.run(
+        return self.command_executor.run(
             ["butler", *butler_command],
             *args,
             not_found_error_message="Cannot find `butler` for Itch publish! Please install it: https://itch.io/docs/butler/",
