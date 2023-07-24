@@ -115,10 +115,12 @@ def get_build_args(
 
 
 def compose_command(command: list[str]):
-    if OperatingSystem.current == OperatingSystem.macos:
-        # for some reason without this workaround Unity will fail with no output and error 1
-        return ["bash", "-c", " ".join(command)]
-    return command
+    match OperatingSystem.current:
+        case OperatingSystem.windows:
+            return " ".join(command)
+        case OperatingSystem.macos:
+            # for some reason without this workaround Unity will fail with no output and error 1
+            return ["bash", "-c", " ".join(command)]
 
 
 class UnityBuilder(BuildStep):

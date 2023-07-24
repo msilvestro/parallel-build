@@ -42,7 +42,6 @@ class BuildProcess:
             ) as source:
                 self.current_build_step = source
                 while not self.interrupt:
-                    # hint: create a single build build step!
                     BuildStep.start.emit(f"Build #{build_count+1}")
 
                     with source.temporary_project() as temp_project_path:
@@ -86,10 +85,6 @@ class BuildProcess:
             BuildStep.error.emit(str(e))
         except BuildProcessInterrupt:
             finished_with_success = False
-        except Exception as e:
-            finished_with_success = False
-            BuildStep.error.emit(str(e))
-            BuildStep.error.emit("Generic error")
 
         if self.on_build_end:
             self.on_build_end(finished_with_success)

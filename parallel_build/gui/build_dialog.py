@@ -108,7 +108,6 @@ class BuildDialog(QDialog):
         if self.should_close:
             return
         self.build_step_label.setText(build_step_name)
-        print(self.output_text_area.toPlainText())
         self.append_output_text(
             f"// {build_step_name}",
             bold=True,
