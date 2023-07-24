@@ -114,6 +114,13 @@ def get_build_args(
             return f'-build{build_target}Player "{build_path}"'
 
 
+def compose_command(command: list[str]):
+    if OperatingSystem.current == OperatingSystem.macos:
+        # for some reason without this workaround Unity will fail with no output and error 1
+        return ["bash", "-c", " ".join(command)]
+    return command
+
+
 class UnityBuilder(BuildStep):
     progress = BuildStepEvent()
 
@@ -136,7 +143,7 @@ class UnityBuilder(BuildStep):
         editor_version = get_editor_version(self.project_path)
 
         self.build_command = Command(
-            " ".join(
+            compose_command(
                 [
                     get_editor_path(editor_version),
                     "-quit",
@@ -147,7 +154,7 @@ class UnityBuilder(BuildStep):
                         self.project_path, build_target, build_method, build_path
                     ),
                 ]
-            )
+            ),
         )
 
     @BuildStep.start_method

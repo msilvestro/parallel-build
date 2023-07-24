@@ -42,6 +42,7 @@ class BuildProcess:
             ) as source:
                 self.current_build_step = source
                 while not self.interrupt:
+                    # hint: create a single build build step!
                     BuildStep.start.emit(f"Build #{build_count+1}")
 
                     with source.temporary_project() as temp_project_path:
