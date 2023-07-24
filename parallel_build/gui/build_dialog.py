@@ -134,9 +134,6 @@ class BuildDialog(QDialog):
         self.append_output_text(error_message, color=RED_COLOR)
         self.update_build_message_label_text(error_message.strip())
         self.build_message_label.setStyleSheet(f"color: {RED_COLOR};")
-        self.progress_bar.setStyleSheet(
-            f"QProgressBar::chunk {{background: {RED_COLOR}}}"
-        )
 
     def cancel(self):
         self.close()

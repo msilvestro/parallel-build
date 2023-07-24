@@ -37,11 +37,7 @@ class BuildThread(QThread):
         self.continuous = continuous
 
     def run(self):
-        try:
-            self.build_process.run(continuous=self.continuous)
-        except Exception as e:
-            self.signals.build_error.emit(str(e))
-            self.signals.build_error.emit("Generic error")
+        self.build_process.run(continuous=self.continuous)
 
     def stop(self):
         if self.build_process:
