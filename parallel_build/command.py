@@ -5,13 +5,10 @@ from parallel_build.exceptions import BuildProcessError
 
 
 class Command:
-    def __init__(
-        self, command: str | list[str], cwd: PathLike[str] = None, shell: bool = False
-    ):
+    def __init__(self, command: str | list[str], **extra_params):
         self.command = command
-        self.cwd = cwd
+        self.extra_params = extra_params
         self.process = None
-        self.shell = shell
 
     def start(self):
         self.process = subprocess.Popen(
@@ -19,8 +16,7 @@ class Command:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=self.cwd,
-            shell=self.shell,
+            **self.extra_params,
         )
 
     def stop(self):
