@@ -57,7 +57,7 @@ class ProjectPostBuildAction(Base):
 class Project(Base):
     name: NonEmptyString
     source: ProjectSource
-    build: ProjectBuildConfig
+    build: ProjectBuildConfig = msgspec.field(default_factory=ProjectBuildConfig)
     post_build: list[ProjectPostBuildAction] = []
 
 
