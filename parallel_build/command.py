@@ -24,6 +24,11 @@ class Command:
             raise Exception(f"Command {self.command} not started")
         self.process.terminate()
 
+    def kill(self):
+        if not self.process:
+            raise Exception(f"Command {self.command} not started")
+        self.process.kill()
+
     @property
     def output_lines(self):
         if not self.process:

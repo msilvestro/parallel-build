@@ -1,3 +1,6 @@
+import time
+from threading import Thread
+
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QCloseEvent, QFont
 from PySide6.QtWidgets import (
@@ -143,9 +146,22 @@ class BuildDialog(QDialog):
 
         if self.should_close:
             # force close
+            self.thread.stop()
             return
 
-        self.thread.stop()
+        Thread(target=self.close_thread_with_retries).start()
         self.build_message_label.setText("Please wait while stopping build process...")
         self.should_close = True
         event.setAccepted(False)
+
+    def close_thread_with_retries(self):
+        self.thread.stop()
+
+        attempts_delay = [1, 5, 15]
+        for i, attempt_delay in enumerate(attempts_delay):
+            for _ in range(attempt_delay):
+                time.sleep(1)
+                if self.thread.isFinished():
+                    return
+            print(f"Attempt #{i+1} at stopping the build process")
+            self.thread.stop()

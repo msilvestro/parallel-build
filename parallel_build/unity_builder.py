@@ -159,6 +159,9 @@ class UnityBuilder(BuildStep):
             ),
         )
 
+        self.stopped = False
+        self.stop_count = 0
+
     @BuildStep.start_method
     @BuildStep.end_method
     def run(self):
@@ -190,12 +193,21 @@ class UnityBuilder(BuildStep):
         else:
             self.error.emit(error_message)
 
+        if self.stopped:
+            self.message.emit("\nUnity build stopped")
+
         return return_value
 
     @BuildStep.end_method
     def stop(self):
+        if self.stop_count >= 3:
+            self.build_command.kill()
+            self.stop_count += 1
+            return
+
         self.build_command.stop()
-        self.message.emit("\nUnity build stopped")
+        self.stop_count += 1
+        self.stopped = True
 
     def log_line_parser(self, line: str):
         if line.startswith("DisplayProgressbar: "):
