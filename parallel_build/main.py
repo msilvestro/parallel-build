@@ -25,7 +25,7 @@ class BuildProcess:
             raise Exception(f"Project '{project_name}' not found")
         self.project = project
         self.git_polling_interval = config.git_polling_interval
-        self.current_build_step = None
+        self.current_build_step: BuildStep = None
         self.interrupt = False
         self.on_build_end = on_build_end
 
@@ -40,9 +40,9 @@ class BuildProcess:
                 self.project.source.value,
                 git_polling_interval=self.git_polling_interval,
             ) as source:
-                self.current_build_step = source
                 while not self.interrupt:
                     BuildStep.start.emit(f"Build #{build_count+1}")
+                    self.current_build_step = source
 
                     with source.temporary_project() as temp_project_path:
                         if self.interrupt:
