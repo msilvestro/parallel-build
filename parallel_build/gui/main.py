@@ -22,6 +22,7 @@ from parallel_build.gui.project_dialogs import (
     EditGitProjectDialog,
     EditLocalProjectDialog,
 )
+from parallel_build.source import clean_leftover_temp_dirs
 
 
 class MainWindow(QWidget):
@@ -146,6 +147,7 @@ class MainWindow(QWidget):
 
     def closeEvent(self, event: QCloseEvent):
         self.config.save()
+        clean_leftover_temp_dirs()
 
 
 def show_gui():
