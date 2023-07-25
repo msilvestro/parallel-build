@@ -27,7 +27,12 @@ def get_source(
 
 def ignore_patterns(project_path: Path):
     def _ignore_patterns(path, names):
-        if Path(path) in (project_path / "Temp", project_path / "Logs"):
+        if Path(path) in (
+            project_path / ".git",
+            project_path / "Library",
+            project_path / "Logs",
+            project_path / "Temp",
+        ):
             return names
         return []
 
