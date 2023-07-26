@@ -1,6 +1,7 @@
+import os
 import sys
 
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -23,12 +24,18 @@ from parallel_build.gui.project_dialogs import (
     EditLocalProjectDialog,
 )
 from parallel_build.source import clean_leftover_temp_dirs
+from parallel_build.utils import OperatingSystem
 
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Parallel Build")
+        self.setWindowIcon(
+            QIcon(
+                os.path.join(os.path.dirname(__file__), "assets/parallelbuild_logo.svg")
+            )
+        )
 
         self.config = Config.load()
 
@@ -151,6 +158,12 @@ class MainWindow(QWidget):
 
 
 def show_gui():
+    if OperatingSystem.current == OperatingSystem.windows:
+        import ctypes
+
+        myappid = "mycompany.myproduct.subproduct.version"
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
