@@ -2,6 +2,7 @@ import subprocess
 from os import PathLike
 
 from parallel_build.exceptions import BuildProcessError
+from parallel_build.utils import OperatingSystem
 
 
 class Command:
@@ -11,6 +12,8 @@ class Command:
         self.process = None
 
     def start(self):
+        if OperatingSystem.current == OperatingSystem.windows:
+            self.extra_params["creationflags"] = subprocess.CREATE_NO_WINDOW
         self.process = subprocess.Popen(
             self.command,
             stdout=subprocess.PIPE,
