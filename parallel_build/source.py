@@ -48,7 +48,7 @@ class LocalSource(BuildStep):
         self.project_path = Path(project_path)
         self.interrupt = False
         self.verbose = verbose
-        self.current_temp_dir = None
+        self.temp_dirs = []
 
     @BuildStep.start_method
     def __enter__(self):
@@ -56,8 +56,9 @@ class LocalSource(BuildStep):
 
     @BuildStep.end_method
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.current_temp_dir and Path(self.current_temp_dir).exists():
-            better_rmtree(path=self.current_temp_dir)
+        for temp_dir in self.temp_dirs:
+            if Path(temp_dir).exists():
+                better_rmtree(path=temp_dir)
 
     def interruptable_copy(self, src, dst, *, follow_symlinks=True):
         if self.interrupt:
@@ -72,10 +73,9 @@ class LocalSource(BuildStep):
         with tempfile.TemporaryDirectory(
             prefix=TEMP_DIR_PREFIX, ignore_cleanup_errors=True
         ) as temp_dir:
-            self.current_temp_dir = temp_dir
+            self.temp_dirs.append(temp_dir)
             self.message.emit(f"Copying {self.project_name} files to {temp_dir}...")
-            temp_dir = Path(temp_dir)
-            temp_project_path = temp_dir / self.project_name
+            temp_project_path = Path(temp_dir) / self.project_name
             try:
                 shutil.copytree(
                     self.project_path,
@@ -86,9 +86,9 @@ class LocalSource(BuildStep):
             except FileNotFoundError as e:
                 raise BuildProcessError(e)
             yield temp_project_path
-            self.message.emit(f"\nCleaning temporary directory {temp_dir.name}...")
-        if Path(temp_dir.name).exists():
-            better_rmtree(path=temp_dir.name)
+            self.message.emit(f"\nCleaning temporary directory {temp_dir}...")
+        if Path(temp_dir).exists():
+            better_rmtree(path=temp_dir)
 
     def stop(self):
         self.interrupt = True
