@@ -41,48 +41,51 @@ class BuildProcess:
                 git_polling_interval=self.git_polling_interval,
             ) as source:
                 while not self.interrupt:
-                    BuildStep.start.emit(f"Build #{build_count+1}")
-                    self.current_build_step = source
+                    try:
+                        BuildStep.start.emit(f"Build #{build_count+1}")
+                        self.current_build_step = source
 
-                    with source.temporary_project() as temp_project_path:
-                        if self.interrupt:
-                            raise BuildProcessInterrupt
-
-                        builder = UnityBuilder(
-                            project_name=self.project.name,
-                            project_path=temp_project_path,
-                            build_target=self.project.build.target,
-                            build_method=self.project.build.method,
-                            build_path=self.project.build.path,
-                        )
-                        self.current_build_step = builder
-                        observer = UnityRecentlyUsedProjectsObserver(temp_project_path)
-                        builder.progress.set(observer.find_and_remove)
-                        return_value = builder.run()
-                        if return_value != 0:
-                            print("\a")
-                            finished_with_success = False
-                            raise BuildProcessError(
-                                f"Unity build error ({return_value})"
-                            )
-
-                        for build_action in self.project.post_build:
+                        with source.temporary_project() as temp_project_path:
                             if self.interrupt:
                                 raise BuildProcessInterrupt
-                            post_build_action = get_post_build_action(
-                                build_action, builder.build_path
-                            )
-                            self.current_build_step = post_build_action
-                            post_build_action.run()
 
-                        print("\a")
-                    BuildStep.end.emit(f"Build #{build_count + 1}")
-                    build_count += 1
-                    if not continuous:
-                        break
-        except BuildProcessError as e:
-            finished_with_success = False
-            BuildStep.error.emit(str(e))
+                            builder = UnityBuilder(
+                                project_name=self.project.name,
+                                project_path=temp_project_path,
+                                build_target=self.project.build.target,
+                                build_method=self.project.build.method,
+                                build_path=self.project.build.path,
+                            )
+                            self.current_build_step = builder
+                            observer = UnityRecentlyUsedProjectsObserver(
+                                temp_project_path
+                            )
+                            builder.progress.set(observer.find_and_remove)
+                            return_value = builder.run()
+                            if return_value != 0:
+                                print("\a")
+                                finished_with_success = False
+                                raise BuildProcessError(
+                                    f"Unity build error ({return_value})"
+                                )
+
+                            for build_action in self.project.post_build:
+                                if self.interrupt:
+                                    raise BuildProcessInterrupt
+                                post_build_action = get_post_build_action(
+                                    build_action, builder.build_path
+                                )
+                                self.current_build_step = post_build_action
+                                post_build_action.run()
+
+                            print("\a")
+                        BuildStep.end.emit(f"Build #{build_count + 1}")
+                        build_count += 1
+                        if not continuous:
+                            break
+                    except BuildProcessError as e:
+                        BuildStep.error.emit(str(e))
+                        raise BuildProcessInterrupt
         except BuildProcessInterrupt:
             finished_with_success = False
 

@@ -1,5 +1,6 @@
 import platform
 import re
+import time
 from pathlib import Path
 
 import msgspec
@@ -180,6 +181,7 @@ class UnityBuilder(BuildStep):
         self.message.emit(
             f"Starting new build of {self.project_name} in {self.project_path}..."
         )
+        build_start_time = time.time()
         self.build_command.start()
         error_message = ""
 
@@ -201,7 +203,9 @@ class UnityBuilder(BuildStep):
 
         return_value = self.build_command.return_value
         if return_value == 0:
-            self.long_message.emit("Success!")
+            self.message.emit(
+                f"Build finished in {time.time() - build_start_time:.2f} seconds!"
+            )
         else:
             self.error.emit(error_message)
 

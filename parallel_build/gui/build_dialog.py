@@ -149,14 +149,15 @@ class BuildDialog(QDialog):
             self.thread.stop()
             return
 
-        Thread(target=self.close_thread_with_retries).start()
+        self.thread.stop()
+        if OperatingSystem.current == OperatingSystem.macos:
+            # MacOS seems to have issues with closing the Unity build process
+            Thread(target=self.close_thread_with_retries).start()
         self.build_message_label.setText("Please wait while stopping build process...")
         self.should_close = True
         event.setAccepted(False)
 
     def close_thread_with_retries(self):
-        self.thread.stop()
-
         attempts_delay = [1, 5, 15]
         for i, attempt_delay in enumerate(attempts_delay):
             for _ in range(attempt_delay):
