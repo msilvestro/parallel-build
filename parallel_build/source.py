@@ -162,6 +162,15 @@ class GitSource(BuildStep):
                 time.sleep(1)
 
         yield self.temp_project_path
+
+        self.run_git(
+            ["reset", "--hard", "HEAD"],
+            cwd=self.temp_project_path,
+        )
+        self.run_git(
+            ["clean", "-df"],
+            cwd=self.temp_project_path,
+        )
         self.build_count += 1
 
     def stop(self):
