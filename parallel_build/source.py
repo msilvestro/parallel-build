@@ -9,6 +9,7 @@ from pathlib import Path
 from parallel_build.build_step import BuildStep
 from parallel_build.config import ProjectSourceType
 from parallel_build.exceptions import BuildProcessError, BuildProcessInterrupt
+from parallel_build.utils import better_rmtree
 
 TEMP_DIR_PREFIX = f"ParallelBuild_{uuid.getnode()}_"
 
@@ -47,6 +48,7 @@ class LocalSource(BuildStep):
         self.project_path = Path(project_path)
         self.interrupt = False
         self.verbose = verbose
+        self.current_temp_dir = None
 
     @BuildStep.start_method
     def __enter__(self):
@@ -54,7 +56,8 @@ class LocalSource(BuildStep):
 
     @BuildStep.end_method
     def __exit__(self, exc_type, exc_value, traceback):
-        return None
+        if self.current_temp_dir and Path(self.current_temp_dir).exists():
+            better_rmtree(path=self.current_temp_dir)
 
     def interruptable_copy(self, src, dst, *, follow_symlinks=True):
         if self.interrupt:
@@ -69,6 +72,7 @@ class LocalSource(BuildStep):
         with tempfile.TemporaryDirectory(
             prefix=TEMP_DIR_PREFIX, ignore_cleanup_errors=True
         ) as temp_dir:
+            self.current_temp_dir = temp_dir
             self.message.emit(f"Copying {self.project_name} files to {temp_dir}...")
             temp_dir = Path(temp_dir)
             temp_project_path = temp_dir / self.project_name
@@ -83,6 +87,8 @@ class LocalSource(BuildStep):
                 raise BuildProcessError(e)
             yield temp_project_path
             self.message.emit(f"\nCleaning temporary directory {temp_dir.name}...")
+        if Path(temp_dir.name).exists():
+            better_rmtree(path=temp_dir.name)
 
     def stop(self):
         self.interrupt = True
@@ -130,6 +136,8 @@ class GitSource(BuildStep):
     def __exit__(self, exc_type, exc_value, traceback):
         self.message.emit(f"\nCleaning temporary directory {self.temp_dir.name}...")
         self.temp_dir.cleanup()
+        if Path(self.temp_dir.name).exists():
+            better_rmtree(path=self.temp_dir.name)
 
     @contextmanager
     def temporary_project(self):

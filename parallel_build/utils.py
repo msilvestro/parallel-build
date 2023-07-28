@@ -1,5 +1,6 @@
 import os
 import platform
+import shutil
 import subprocess
 from enum import Enum
 
@@ -50,3 +51,23 @@ def get_app_dir(app_name: str) -> str:
         return os.path.join(
             os.path.expanduser("~/Library/Application Support"), app_name
         )
+
+
+def better_rmtree(path):
+    """This `rmtree` can also handle paths that are too long in Windows.
+
+    See https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry
+    """
+    if OperatingSystem.current != OperatingSystem.windows:
+        shutil.rmtree(path=path, ignore_errors=True)
+        return
+
+    def onerror(func, path, exc_info):
+        if issubclass(exc_info[0], FileNotFoundError):
+            try:
+                func("\\\\?\\" + path)
+            except Exception:
+                print(f"Couldn't delete {path}")
+                pass
+
+    shutil.rmtree(path=path, onerror=onerror)
