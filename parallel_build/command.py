@@ -19,6 +19,7 @@ class Command:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="UTF-8",
             **self.extra_params,
         )
 
@@ -80,7 +81,9 @@ class CommandExecutor:
             else:
                 self.stdout_function(stdout)
         else:
-            self.stderr_function(stderr)
+            self.stderr_function(
+                stdout + stderr
+            )  # sometimes commands write errors to stdout
             raise BuildProcessError(
                 f"Error running '{self._pretty_command(command)}'"
                 if not error_message
