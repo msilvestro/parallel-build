@@ -35,7 +35,7 @@ class CopyBuild(BuildStep):
         if self.interrupt:
             self.message.emit("\nBuild files copy stopped")
             raise BuildProcessInterrupt
-        if not self.verbose:
+        if self.verbose:
             self.long_message.emit(f"Copying {src} to {dst}")
         return shutil.copy2(src, dst, follow_symlinks=True)
 
