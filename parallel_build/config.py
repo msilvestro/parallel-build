@@ -36,7 +36,7 @@ class ProjectSource(Base):
 
 class BuildTarget(str, Enum):
     windows = "Windows"
-    windows64 = "Windows 64"
+    windows64 = "Windows64"
     macos = "OSXUniversal"
     linux = "Linux64"
     webgl = "WebGL"

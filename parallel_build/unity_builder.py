@@ -79,7 +79,7 @@ namespace ParallelBuild
 
         public static bool Build()
         {
-            return Build(GetArg("-buildpath", "Build/WebGL"));
+            return Build(GetArg("-buildpath", "Builds/WebGL"));
         }
 
         public static bool Build(string buildPath)
@@ -99,7 +99,11 @@ namespace ParallelBuild
 
 
 def get_build_args(
-    project_path: Path, build_target: BuildTarget, build_method: str, build_path: str
+    project_name: str,
+    project_path: Path,
+    build_target: BuildTarget,
+    build_method: str,
+    build_path: str,
 ):
     match build_target:
         case BuildTarget.webgl:
@@ -110,8 +114,12 @@ def get_build_args(
             return f"-executeMethod ParallelBuild.WebGLBuilder.Build -buildpath {build_path}"
         case BuildTarget.custom:
             return f"-executeMethod {build_method} -buildpath {build_path}"
-        case _:
-            return f'-build{build_target}Player "{build_path}"'
+        case BuildTarget.windows | BuildTarget.windows64:
+            return f'-build{build_target.value}Player "{build_path}/{project_name}.exe"'
+        case BuildTarget.macos:
+            return f'-build{build_target.value}Player "{build_path}/{project_name}.app"'
+        case BuildTarget.linux:
+            return f'-build{build_target.value}Player "{build_path}/{project_name}"'
 
 
 def compose_command(command: list[str]):
@@ -153,7 +161,11 @@ class UnityBuilder(BuildStep):
                     f'-projectpath "{self.project_path}"',
                     "-logFile -",
                     get_build_args(
-                        self.project_path, build_target, build_method, build_path
+                        project_name=self.project_name,
+                        project_path=self.project_path,
+                        build_target=build_target,
+                        build_method=build_method,
+                        build_path=build_path,
                     ),
                 ]
             ),
