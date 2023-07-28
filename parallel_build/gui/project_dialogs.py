@@ -116,7 +116,9 @@ class ManageProjectDialog(QDialog):
         self.on_init_end()
 
     def select_copy_path(self):
-        project_path = QFileDialog.getExistingDirectory(self, "Select destination path")
+        project_path = QFileDialog.getExistingDirectory(
+            self, "Select destination path", dir=self.copy_path_textbox.text()
+        )
         if project_path == "":
             return
         self.copy_path_textbox.setText(project_path)
@@ -303,7 +305,9 @@ class LocalProjectMixin:
             self.on_project_path_update()
 
     def select_project_path(self):
-        project_path = QFileDialog.getExistingDirectory(self, "Select project path")
+        project_path = QFileDialog.getExistingDirectory(
+            self, "Select project path", dir=self.project_path_textbox.text()
+        )
         if project_path == "":
             return
 
