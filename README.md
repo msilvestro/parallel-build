@@ -2,8 +2,20 @@
 
 Build your Unity project while you develop!
 
-To run:
+To run, first enter the Poetry shell:
 
 ```sh
-poetry run build "Project Name"
+poetry shell
+```
+
+Then you can either decide to use the CLI:
+
+```sh
+parallelbuild build "Project Name"
+```
+
+or the GUI:
+
+```sh
+parallelbuild-gui
 ```
